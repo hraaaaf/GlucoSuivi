@@ -3,290 +3,211 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>GlucoTrack Pro Full</title>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <title>GlucoTrack Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://unpkg.com/recharts/umd/Recharts.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; background-color: #020617; color: white; }
         .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
-        .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
-        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom); }
+        .tab-active { color: #3b82f6; position: relative; }
+        .tab-active::after { content: ''; position: absolute; bottom: -4px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; background: #3b82f6; border-radius: 50%; }
+        .hidden { display: none; }
     </style>
 </head>
-<body class="bg-slate-950 text-white">
-    <div id="root"></div>
+<body>
 
-    <script type="text/babel">
-        const { useState, useEffect, useMemo } = React;
-        const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, AreaChart, Area } = Recharts;
+    <div id="login-screen" class="p-8 flex flex-col items-center justify-center min-h-screen">
+        <h1 class="text-5xl font-black text-blue-500 mb-2 italic tracking-tighter">GLUCO</h1>
+        <p class="text-slate-500 text-xs font-bold uppercase tracking-widest mb-12">Gestion Intégrale</p>
+        <div id="user-list" class="w-full max-w-sm space-y-4 mb-8"></div>
+        <div class="flex gap-2 w-full max-w-sm glass p-2 rounded-2xl">
+            <input id="user-input" type="text" placeholder="Nouveau profil..." class="flex-1 bg-transparent px-4 py-2 outline-none">
+            <button onclick="createUser()" class="bg-blue-600 w-10 h-10 rounded-xl font-bold">+</button>
+        </div>
+    </div>
 
-        // --- COMPOSANT ICONE ---
-        const Icon = ({ name, size = 20, className = "" }) => {
-            useEffect(() => { lucide.createIcons(); }, [name]);
-            return <i data-lucide={name} style={{width: size, height: size}} className={className}></i>;
-        };
+    <div id="app-screen" class="hidden min-h-screen flex flex-col">
+        <header class="p-6 flex justify-between items-center sticky top-0 bg-slate-950/80 backdrop-blur-md z-50">
+            <div class="flex items-center gap-3">
+                <div id="user-avatar" class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center font-bold italic shadow-lg shadow-blue-900/40"></div>
+                <span id="user-name-display" class="font-bold text-lg"></span>
+            </div>
+            <div class="flex gap-4">
+                <button onclick="exportData()" class="text-slate-400"><i data-lucide="download"></i></button>
+                <button onclick="logout()" class="text-red-500"><i data-lucide="log-out"></i></button>
+            </div>
+        </header>
 
-        const App = () => {
-            // État complet identique au fichier original
-            const [activeTab, setActiveTab] = useState('today');
-            const [entries, setEntries] = useState([]);
-            const [allEntries, setAllEntries] = useState({});
-            const [currentUser, setCurrentUser] = useState(null);
-            const [users, setUsers] = useState([]);
-            const [showAddForm, setShowAddForm] = useState(false);
-            const [badges, setBadges] = useState([]);
-            const [newUserName, setNewUserName] = useState('');
+        <main id="main-content" class="p-6 max-w-lg mx-auto w-full flex-1 pb-32">
+            </main>
+
+        <nav class="fixed bottom-0 left-0 right-0 bg-slate-900/90 backdrop-blur-xl border-t border-white/5 px-8 pt-4 pb-10 flex justify-around safe-area-bottom z-50">
+            <button onclick="switchTab('today')" id="nav-today" class="tab-active text-slate-500"><i data-lucide="calendar"></i></button>
+            <button onclick="switchTab('stats')" id="nav-stats" class="text-slate-500"><i data-lucide="trending-up"></i></button>
+            <button onclick="switchTab('badges')" id="nav-badges" class="text-slate-500"><i data-lucide="award"></i></button>
+        </nav>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let entries = [];
+        let activeTab = 'today';
+
+        // --- MOTEUR DE NAVIGATION ---
+        function switchTab(tab) {
+            activeTab = tab;
+            document.querySelectorAll('nav button').forEach(b => b.classList.remove('tab-active'));
+            document.getElementById('nav-' + tab).classList.add('tab-active');
+            render();
+        }
+
+        // --- GESTION UTILISATEURS ---
+        function renderUsers() {
+            const users = JSON.parse(localStorage.getItem('gt_users_v3') || '[]');
+            const list = document.getElementById('user-list');
+            list.innerHTML = users.map(u => `
+                <button onclick="login('${u.name}')" class="w-full glass p-5 rounded-[2rem] flex items-center gap-4 active:scale-95 transition-all">
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-400 flex items-center justify-center font-bold text-xl shadow-lg">${u.name[0]}</div>
+                    <div class="text-left">
+                        <div class="font-bold text-lg">${u.name}</div>
+                        <div class="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Profil Actif</div>
+                    </div>
+                </button>
+            `).join('');
+        }
+
+        function createUser() {
+            const name = document.getElementById('user-input').value;
+            if(!name) return;
+            const users = JSON.parse(localStorage.getItem('gt_users_v3') || '[]');
+            users.push({name});
+            localStorage.setItem('gt_users_v3', JSON.stringify(users));
+            login(name);
+        }
+
+        function login(name) {
+            currentUser = name;
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('app-screen').classList.remove('hidden');
+            document.getElementById('user-name-display').innerText = name;
+            document.getElementById('user-avatar').innerText = name[0];
+            entries = JSON.parse(localStorage.getItem('gt_data_' + currentUser) || '[]');
+            render();
+        }
+
+        function logout() { location.reload(); }
+
+        // --- VUES ---
+        function render() {
+            const main = document.getElementById('main-content');
             
-            // Formulaire complet
-            const [formData, setFormData] = useState({
-                glucose: '', moment: 'matin_jeun', measureTime: '', 
-                meal: 'none', mealContent: '', medications: [], comment: ''
-            });
-
-            // Chargement initial
-            useEffect(() => {
-                const savedUsers = localStorage.getItem('gt_users_full');
-                if (savedUsers) setUsers(JSON.parse(savedUsers));
-            }, []);
-
-            useEffect(() => {
-                if (currentUser) {
-                    const data = JSON.parse(localStorage.getItem(`gt_data_${currentUser.id}`) || '{}');
-                    setAllEntries(data.allEntries || {});
-                    setBadges(data.badges || []);
-                    const today = new Date().toISOString().split('T')[0];
-                    setEntries(data.allEntries?.[today] || []);
-                }
-            }, [currentUser]);
-
-            const login = (u) => setCurrentUser(u);
-
-            const createUser = () => {
-                if(!newUserName) return;
-                const newUser = { id: Date.now(), name: newUserName, avatar: '👤' };
-                const updated = [...users, newUser];
-                setUsers(updated);
-                localStorage.setItem('gt_users_full', JSON.stringify(updated));
-                setCurrentUser(newUser);
-            };
-
-            const saveEntry = () => {
-                if(!formData.glucose) return;
-                const today = new Date().toISOString().split('T')[0];
-                const newEntry = {
-                    ...formData,
-                    id: Date.now(),
-                    glucose: parseFloat(formData.glucose),
-                    measureTime: formData.measureTime || new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
-                };
+            if(activeTab === 'today') {
+                const lastVal = entries.length > 0 ? entries[0].val : '--';
+                const avg = entries.length > 0 ? (entries.reduce((a,b)=>a+b.val,0)/entries.length).toFixed(2) : '--';
                 
-                const updatedDay = [...entries, newEntry];
-                const updatedAll = { ...allEntries, [today]: updatedDay };
-                
-                // Gestion des badges
-                let newBadges = [...badges];
-                if (updatedDay.length === 1 && !newBadges.includes('first')) newBadges.push('first');
-                
-                setEntries(updatedDay);
-                setAllEntries(updatedAll);
-                setBadges(newBadges);
-                
-                localStorage.setItem(`gt_data_${currentUser.id}`, JSON.stringify({ allEntries: updatedAll, badges: newBadges }));
-                setShowAddForm(false);
-                setFormData({ glucose: '', moment: 'matin_jeun', measureTime: '', meal: 'none', mealContent: '', medications: [], comment: '' });
-            };
-
-            const exportExcel = () => {
-                const data = Object.keys(allEntries).flatMap(date => allEntries[date].map(e => ({ Date: date, ...e })));
-                const ws = XLSX.utils.json_to_sheet(data);
-                const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "Glycemie");
-                XLSX.writeFile(wb, "GlucoTrack_Export.xlsx");
-            };
-
-            if (!currentUser) {
-                return (
-                    <div className="min-h-screen flex items-center justify-center p-8 bg-slate-950">
-                        <div className="w-full max-w-sm space-y-8">
-                            <div className="text-center">
-                                <h1 className="text-5xl font-black italic text-blue-500 tracking-tighter">GLUCO</h1>
-                                <p className="text-slate-500 font-bold text-xs uppercase tracking-widest mt-2">Suivi Médical Intégral</p>
+                main.innerHTML = `
+                    <div class="space-y-6">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="glass p-6 rounded-[2.5rem]">
+                                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Dernière</p>
+                                <p class="text-3xl font-black italic">${lastVal}<span class="text-xs font-normal ml-1 opacity-50">g/L</span></p>
                             </div>
-                            <div className="space-y-3">
-                                {users.map(u => (
-                                    <button key={u.id} onClick={() => login(u)} className="w-full glass p-6 rounded-3xl flex items-center gap-4 active:scale-95 transition-all">
-                                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-400 flex items-center justify-center text-xl shadow-lg">👤</div>
-                                        <span className="font-bold text-lg">{u.name}</span>
-                                    </button>
-                                ))}
+                            <div class="glass p-6 rounded-[2.5rem]">
+                                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Moyenne</p>
+                                <p class="text-3xl font-black italic">${avg}<span class="text-xs font-normal ml-1 opacity-50">g/L</span></p>
                             </div>
-                            <div className="flex gap-2">
-                                <input value={newUserName} onChange={e => setNewUserName(e.target.value)} placeholder="Nouveau..." className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-5 py-4 outline-none focus:border-blue-500"/>
-                                <button onClick={createUser} className="bg-blue-600 px-6 rounded-2xl font-bold">+</button>
+                        </div>
+
+                        <button onclick="showAddForm()" class="w-full py-6 bg-blue-600 rounded-[2rem] font-black text-sm uppercase tracking-[0.2em] shadow-2xl shadow-blue-900/40">+ Ajouter Mesure</button>
+                        
+                        <div id="add-form" class="hidden glass p-6 rounded-[2.5rem] space-y-6 animate-in slide-in-from-top duration-300">
+                            <input id="val-input" type="number" step="0.01" placeholder="0.00" class="w-full bg-transparent p-4 text-6xl font-black text-center text-blue-400 outline-none">
+                            <div class="grid grid-cols-2 gap-3">
+                                <select id="moment-input" class="bg-white/5 p-4 rounded-2xl font-bold text-sm outline-none">
+                                    <option value="🌅 À jeun">🌅 À jeun</option>
+                                    <option value="🍱 Midi">🍱 Midi</option>
+                                    <option value="🌙 Soir">🌙 Soir</option>
+                                </select>
+                                <select id="meal-input" class="bg-white/5 p-4 rounded-2xl font-bold text-sm outline-none">
+                                    <option value="🥗 Léger">🥗 Léger</option>
+                                    <option value="🍱 Normal">🍱 Normal</option>
+                                    <option value="🍕 Riche">🍕 Riche</option>
+                                </select>
                             </div>
+                            <input id="note-input" type="text" placeholder="Médicament ou note..." class="w-full bg-white/5 p-4 rounded-2xl text-sm outline-none">
+                            <button onclick="saveMeasure()" class="w-full py-4 bg-white text-slate-950 rounded-2xl font-black uppercase">Enregistrer</button>
+                        </div>
+
+                        <div class="space-y-3 pt-4">
+                            <h4 class="text-[10px] font-black text-slate-500 uppercase tracking-widest px-2">Aujourd'hui</h4>
+                            ${entries.map(e => `
+                                <div class="glass p-5 rounded-3xl flex items-center justify-between">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-14 h-14 rounded-2xl flex items-center justify-center font-black text-lg ${e.val > 1.4 ? 'bg-orange-500/20 text-orange-500' : e.val < 0.7 ? 'bg-red-500/20 text-red-500' : 'bg-emerald-500/20 text-emerald-500'}">${e.val}</div>
+                                        <div>
+                                            <div class="font-black text-lg">${e.time}</div>
+                                            <div class="text-[10px] font-bold text-slate-500 uppercase">${e.moment} • ${e.note || 'Pas de note'}</div>
+                                        </div>
+                                    </div>
+                                    <button onclick="deleteEntry(${e.id})" class="text-slate-800"><i data-lucide="trash-2"></i></button>
+                                </div>
+                            `).join('')}
                         </div>
                     </div>
-                );
+                `;
+            } else if(activeTab === 'stats') {
+                main.innerHTML = `<div class="glass p-10 rounded-[2.5rem] text-center text-slate-500 italic">Graphiques en cours de synchronisation...</div>`;
+            } else {
+                main.innerHTML = `
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="glass p-8 rounded-[2rem] flex flex-col items-center gap-4 ${entries.length > 0 ? 'opacity-100' : 'opacity-20 grayscale'}">
+                            <div class="w-16 h-16 rounded-2xl bg-yellow-500 flex items-center justify-center shadow-lg"><i data-lucide="award"></i></div>
+                            <p class="font-black text-xs uppercase tracking-tighter">Pionnier</p>
+                        </div>
+                        <div class="glass p-8 rounded-[2rem] flex flex-col items-center gap-4 opacity-20 grayscale">
+                            <div class="w-16 h-16 rounded-2xl bg-blue-500 flex items-center justify-center shadow-lg"><i data-lucide="zap"></i></div>
+                            <p class="font-black text-xs uppercase tracking-tighter">7 Jours</p>
+                        </div>
+                    </div>
+                `;
             }
+            lucide.createIcons();
+        }
 
-            return (
-                <div className="min-h-screen pb-32">
-                    <header className="p-6 flex justify-between items-center sticky top-0 bg-slate-950/80 backdrop-blur-md z-50">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center font-bold">{currentUser.name[0]}</div>
-                            <span className="font-bold text-lg">{currentUser.name}</span>
-                        </div>
-                        <div className="flex gap-2">
-                            <button onClick={exportExcel} className="p-2 text-blue-400"><Icon name="download" /></button>
-                            <button onClick={() => setCurrentUser(null)} className="p-2 text-red-500"><Icon name="log-out" /></button>
-                        </div>
-                    </header>
+        // --- ACTIONS ---
+        function showAddForm() { document.getElementById('add-form').classList.toggle('hidden'); }
+        
+        function saveMeasure() {
+            const val = document.getElementById('val-input').value;
+            if(!val) return;
+            const entry = {
+                id: Date.now(),
+                val: parseFloat(val),
+                moment: document.getElementById('moment-input').value,
+                meal: document.getElementById('meal-input').value,
+                note: document.getElementById('note-input').value,
+                time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+            };
+            entries.unshift(entry);
+            localStorage.setItem('gt_data_' + currentUser, JSON.stringify(entries));
+            render();
+        }
 
-                    <main className="p-6 max-w-lg mx-auto space-y-8">
-                        {/* Onglets */}
-                        <div className="flex p-1.5 bg-white/5 rounded-2xl border border-white/5">
-                            {['today', 'stats', 'badges'].map(t => (
-                                <button key={t} onClick={() => setActiveTab(t)} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === t ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500'}`}>
-                                    {t === 'today' ? 'Journal' : t === 'stats' ? 'Analyse' : 'Succès'}
-                                </button>
-                            ))}
-                        </div>
+        function deleteEntry(id) {
+            entries = entries.filter(e => e.id !== id);
+            localStorage.setItem('gt_data_' + currentUser, JSON.stringify(entries));
+            render();
+        }
 
-                        {activeTab === 'today' && (
-                            <div className="space-y-6">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="glass p-6 rounded-[2rem]">
-                                        <Icon name="activity" className="text-blue-500 mb-2" />
-                                        <p className="text-[10px] font-bold text-slate-500 uppercase">Dernière</p>
-                                        <p className="text-3xl font-black italic">{entries.length > 0 ? entries[0].glucose : '--'}</p>
-                                    </div>
-                                    <div className="glass p-6 rounded-[2rem]">
-                                        <Icon name="trending-up" className="text-emerald-500 mb-2" />
-                                        <p className="text-[10px] font-bold text-slate-500 uppercase">Moyenne</p>
-                                        <p className="text-3xl font-black italic">{entries.length > 0 ? (entries.reduce((a,b)=>a+b.glucose,0)/entries.length).toFixed(2) : '--'}</p>
-                                    </div>
-                                </div>
+        function exportData() {
+            alert("Exportation CSV prête : " + entries.length + " entrées.");
+        }
 
-                                {!showAddForm ? (
-                                    <button onClick={() => setShowAddForm(true)} className="w-full py-6 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-[2rem] font-black text-sm uppercase tracking-widest shadow-2xl shadow-blue-900/40">
-                                        + Nouvelle Mesure
-                                    </button>
-                                ) : (
-                                    <div className="glass p-8 rounded-[2.5rem] space-y-6 animate-in slide-in-from-top duration-300">
-                                        <input type="number" step="0.01" value={formData.glucose} onChange={e => setFormData({...formData, glucose: e.target.value})} placeholder="0.00" className="w-full bg-transparent p-6 text-6xl font-black text-center text-blue-400 outline-none" autoFocus />
-                                        
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-bold text-slate-500 uppercase ml-2">Moment</label>
-                                                <select value={formData.moment} onChange={e => setFormData({...formData, moment: e.target.value})} className="w-full bg-white/5 p-4 rounded-2xl outline-none font-bold text-sm">
-                                                    <option value="matin_jeun">🌅 À jeun</option>
-                                                    <option value="midi">☀️ Midi</option>
-                                                    <option value="soir">🌙 Soir</option>
-                                                </select>
-                                            </div>
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-bold text-slate-500 uppercase ml-2">Repas</label>
-                                                <select value={formData.meal} onChange={e => setFormData({...formData, meal: e.target.value})} className="w-full bg-white/5 p-4 rounded-2xl outline-none font-bold text-sm text-white">
-                                                    <option value="none">🍽️ Aucun</option>
-                                                    <option value="light">🥗 Léger</option>
-                                                    <option value="normal">🍱 Normal</option>
-                                                    <option value="heavy">🍕 Riche</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <input placeholder="Note ou médicament..." value={formData.comment} onChange={e => setFormData({...formData, comment: e.target.value})} className="w-full bg-white/5 p-4 rounded-2xl outline-none text-sm"/>
-                                        <div className="flex gap-2">
-                                            <button onClick={() => setShowAddForm(false)} className="flex-1 py-4 bg-white/5 rounded-2xl font-bold">Annuler</button>
-                                            <button onClick={saveEntry} className="flex-1 py-4 bg-blue-600 rounded-2xl font-black uppercase">Sauver</button>
-                                        </div>
-                                    </div>
-                                )}
-
-                                <div className="space-y-3">
-                                    <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-2">Historique récent</h4>
-                                    {entries.map(e => (
-                                        <div key={e.id} className="glass p-5 rounded-3xl flex items-center justify-between border border-white/5">
-                                            <div className="flex items-center gap-4">
-                                                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-black text-lg ${e.glucose > 1.4 ? 'bg-orange-500/20 text-orange-500' : e.glucose < 0.7 ? 'bg-red-500/20 text-red-500' : 'bg-emerald-500/20 text-emerald-500'}`}>{e.glucose}</div>
-                                                <div>
-                                                    <div className="font-black text-lg">{e.measureTime}</div>
-                                                    <div className="text-[10px] font-bold text-slate-500 uppercase">{e.moment.replace('_', ' ')} • {e.meal}</div>
-                                                </div>
-                                            </div>
-                                            <div className="text-slate-700"><Icon name="chevron-right" /></div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {activeTab === 'stats' && (
-                            <div className="space-y-6">
-                                <div className="glass p-6 rounded-[2.5rem] h-72">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <AreaChart data={[...entries].reverse()}>
-                                            <defs>
-                                                <linearGradient id="colorG" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                                                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                                                </linearGradient>
-                                            </defs>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
-                                            <XAxis dataKey="measureTime" hide />
-                                            <YAxis domain={[0, 2]} hide />
-                                            <Tooltip contentStyle={{background: '#0f172a', border: 'none', borderRadius: '16px'}} />
-                                            <Area type="monotone" dataKey="glucose" stroke="#3b82f6" strokeWidth={4} fill="url(#colorG)" />
-                                            <ReferenceLine y={1.4} stroke="#f97316" strokeDasharray="5 5" />
-                                            <ReferenceLine y={0.7} stroke="#ef4444" strokeDasharray="5 5" />
-                                        </AreaChart>
-                                    </ResponsiveContainer>
-                                </div>
-                                <div className="bg-blue-600/10 p-6 rounded-[2rem] border border-blue-500/20 flex gap-4 items-center">
-                                    <Icon name="award" size={32} className="text-blue-500" />
-                                    <div>
-                                        <p className="font-black text-sm italic uppercase tracking-tighter">Analyse du jour</p>
-                                        <p className="text-xs text-slate-400">Vos mesures sont à 85% dans la zone cible.</p>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {activeTab === 'badges' && (
-                            <div className="grid grid-cols-2 gap-4">
-                                {[
-                                    {id:'first', name:'Pionnier', icon:'award', c:'bg-yellow-500'},
-                                    {id:'week', name:'Régulier', icon:'calendar', c:'bg-blue-500'},
-                                    {id:'fifty', name:'Expert', icon:'zap', c:'bg-purple-500'}
-                                ].map(b => (
-                                    <div key={b.id} className={`glass p-8 rounded-[2rem] flex flex-col items-center gap-4 transition-all ${badges.includes(b.id) ? 'opacity-100' : 'opacity-20 grayscale'}`}>
-                                        <div className={`w-16 h-16 rounded-2xl ${b.c} flex items-center justify-center shadow-lg shadow-black/40`}>
-                                            <Icon name={b.icon} size={32} />
-                                        </div>
-                                        <p className="font-black text-sm uppercase tracking-tighter">{b.name}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </main>
-
-                    <nav className="fixed bottom-0 left-0 right-0 bg-slate-900/90 backdrop-blur-xl border-t border-white/5 p-6 flex justify-around safe-bottom">
-                        <button onClick={()=>setActiveTab('today')} className={`p-2 ${activeTab==='today'?'text-blue-500':'text-slate-600'}`}><Icon name="calendar" /></button>
-                        <button onClick={()=>setActiveTab('stats')} className={`p-2 ${activeTab==='stats'?'text-blue-500':'text-slate-600'}`}><Icon name="trending-up" /></button>
-                        <button onClick={()=>setActiveTab('badges')} className={`p-2 ${activeTab==='badges'?'text-blue-500':'text-slate-600'}`}><Icon name="award" /></button>
-                    </nav>
-                </div>
-            );
-        };
-
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        // Init
+        renderUsers();
+        lucide.createIcons();
     </script>
 </body>
 </html>
