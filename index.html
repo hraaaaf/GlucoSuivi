@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GlucoTrack - Suivi Diabète</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             --bg-dark: #0f172a;
@@ -16,24 +14,57 @@
             --warning: #f59e0b;
             --danger: #ef4444;
             --text: #f8fafc;
-            --text-light: #cbd5e1;
         }
         
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, sans-serif; }
         
         body {
             background: linear-gradient(135deg, #0f172a, #1e40af);
             color: var(--text);
             min-height: 100vh;
-            padding-bottom: 80px;
         }
         
-        /* Header */
+        .container { padding: 15px; max-width: 600px; margin: 0 auto; }
+        
+        /* Écran utilisateur */
+        .user-screen {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .user-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .avatar-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .avatar-btn {
+            font-size: 2.5rem;
+            background: rgba(255,255,255,0.05);
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 20px;
+            cursor: pointer;
+        }
+        
+        .avatar-btn.selected {
+            border-color: var(--primary);
+            background: rgba(59,130,246,0.2);
+        }
+        
+        /* Interface principale */
         .header {
             background: rgba(30, 41, 59, 0.9);
             backdrop-filter: blur(10px);
@@ -44,69 +75,112 @@
             z-index: 100;
         }
         
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .avatar {
-            font-size: 2rem;
-        }
-        
-        .stats {
+        .stats-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 10px;
             margin-top: 15px;
         }
         
-        .stat-card {
+        .stat-item {
             background: rgba(255,255,255,0.1);
             padding: 12px;
             border-radius: 10px;
             text-align: center;
         }
         
-        /* Navigation */
+        /* Onglets */
         .tabs {
             display: flex;
             background: rgba(255,255,255,0.1);
             border-radius: 12px;
-            margin: 15px;
             padding: 5px;
+            margin: 15px;
+            overflow-x: auto;
         }
         
-        .tab {
+        .tab-btn {
             flex: 1;
             padding: 12px;
-            text-align: center;
+            border: none;
+            background: none;
+            color: var(--text);
             border-radius: 8px;
             font-size: 14px;
-            background: none;
-            color: var(--text-light);
-            border: none;
+            white-space: nowrap;
         }
         
-        .tab.active {
+        .tab-btn.active {
             background: var(--primary);
-            color: white;
         }
         
-        /* Contenu principal */
-        .container {
-            padding: 0 15px;
-        }
-        
-        .card {
-            background: var(--bg-card);
+        /* Formulaire */
+        .form-card {
+            background: rgba(30, 41, 59, 0.8);
             border-radius: 15px;
             padding: 20px;
-            margin-bottom: 15px;
-            border: 1px solid rgba(255,255,255,0.1);
+            margin: 15px 0;
+            border: 1px solid rgba(59,130,246,0.3);
         }
         
-        /* Boutons */
+        .moment-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .moment-option {
+            padding: 15px;
+            background: rgba(255,255,255,0.05);
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .moment-option.selected {
+            border-color: var(--primary);
+            background: rgba(59,130,246,0.2);
+        }
+        
+        /* Entrées */
+        .entry-item {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(30, 64, 175, 0.3));
+            border: 1px solid rgba(59,130,246,0.2);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+        
+        .glucose-badge {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            display: inline-block;
+        }
+        
+        /* Badges */
+        .badge-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .badge-card {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+        }
+        
+        .badge-card.unlocked {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+        }
+        
+        /* Utilitaires */
         .btn-primary {
             background: linear-gradient(135deg, var(--primary), var(--secondary));
             color: white;
@@ -117,33 +191,10 @@
             font-weight: 600;
             width: 100%;
             margin: 10px 0;
+            cursor: pointer;
         }
         
-        .btn-icon {
-            background: rgba(255,255,255,0.1);
-            border: none;
-            color: white;
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        /* Formulaire */
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        .form-label {
-            display: block;
-            margin-bottom: 8px;
-            color: var(--secondary);
-            font-weight: 600;
-        }
-        
-        .form-input {
+        .input-field {
             width: 100%;
             padding: 14px;
             background: rgba(255,255,255,0.1);
@@ -151,263 +202,165 @@
             border-radius: 10px;
             color: white;
             font-size: 16px;
+            margin-bottom: 15px;
         }
         
-        .moment-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            margin: 15px 0;
-        }
-        
-        .moment-btn {
-            padding: 15px;
-            background: rgba(255,255,255,0.05);
-            border: 2px solid rgba(255,255,255,0.1);
-            border-radius: 10px;
-            color: white;
-            text-align: center;
-        }
-        
-        .moment-btn.active {
-            background: rgba(59, 130, 246, 0.3);
-            border-color: var(--primary);
-        }
-        
-        /* Liste des entrées */
-        .entry-card {
-            background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(30, 64, 175, 0.3));
-            border: 1px solid rgba(59, 130, 246, 0.2);
-            border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 10px;
-        }
-        
-        .entry-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 10px;
-        }
-        
-        .glucose-value {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            padding: 10px 15px;
-            border-radius: 10px;
-            font-size: 1.5rem;
-            font-weight: bold;
-            display: inline-block;
-        }
-        
-        /* Alertes */
-        .alert {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 15px 25px;
-            border-radius: 10px;
-            font-weight: 600;
-            z-index: 1000;
-            animation: slideDown 0.3s ease;
-        }
-        
-        .alert-success { background: var(--success); }
-        .alert-warning { background: var(--warning); }
-        .alert-danger { background: var(--danger); }
-        
-        @keyframes slideDown {
-            from { top: -100px; }
-            to { top: 20px; }
-        }
-        
-        /* Responsive */
-        @media (max-width: 480px) {
-            .stats { grid-template-columns: repeat(2, 1fr); }
-            .moment-grid { grid-template-columns: 1fr; }
-        }
-        
-        /* Loader */
-        .loader {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: var(--bg-dark);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-        
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid rgba(255,255,255,0.1);
-            border-top-color: var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
-    <!-- Loader -->
-    <div id="loader" class="loader">
-        <div class="spinner"></div>
-    </div>
-    
-    <!-- Alertes -->
-    <div id="alert" class="alert" style="display: none;"></div>
-    
-    <!-- Écran de sélection utilisateur -->
-    <div id="userScreen" class="container" style="display: none; padding-top: 50px;">
-        <div style="text-align: center; margin-bottom: 40px;">
-            <h1 style="font-size: 2.5rem; background: linear-gradient(135deg, #3b82f6, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 10px;">GlucoTrack</h1>
-            <p style="color: var(--text-light);">Sélectionnez un profil</p>
-        </div>
-        
-        <div id="userList" style="margin-bottom: 30px;"></div>
-        
-        <div class="card">
-            <h3 style="margin-bottom: 15px;">Nouveau profil</h3>
-            <input type="text" id="newUserName" class="form-input" placeholder="Votre nom" style="margin-bottom: 15px;">
-            <button onclick="createUser()" class="btn-primary">
-                <i class="fas fa-plus"></i> Créer profil
+    <!-- Écran utilisateur -->
+    <div id="userScreen" class="container user-screen">
+        <div class="user-card">
+            <h1 style="text-align: center; margin-bottom: 30px; font-size: 2.5rem; background: linear-gradient(135deg, #3b82f6, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                GlucoTrack
+            </h1>
+            
+            <div id="existingUsers" style="margin-bottom: 30px;"></div>
+            
+            <h3 style="margin-bottom: 15px; color: var(--secondary);">Nouveau profil :</h3>
+            <input type="text" id="userNameInput" class="input-field" placeholder="Nom du patient">
+            
+            <h4 style="margin: 20px 0 15px 0; color: var(--secondary);">Choisissez un avatar :</h4>
+            <div class="avatar-grid" id="avatarGrid">
+                <!-- Généré par JavaScript -->
+            </div>
+            
+            <button onclick="createUser()" class="btn-primary" style="margin-top: 20px;">
+                Créer le profil
             </button>
         </div>
     </div>
     
     <!-- Application principale -->
-    <div id="app" style="display: none;">
+    <div id="mainApp" class="hidden">
         <!-- Header -->
         <div class="header">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div class="user-info">
-                    <div class="avatar" id="currentAvatar">👤</div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div id="currentUserAvatar" style="font-size: 2rem;">👤</div>
                     <div>
                         <h2 id="currentUserName">Utilisateur</h2>
-                        <small style="color: var(--text-light);">GlucoTrack</small>
+                        <small style="color: #94a3b8;">GlucoTrack</small>
                     </div>
                 </div>
                 <div style="display: flex; gap: 10px;">
-                    <button class="btn-icon" onclick="exportData()" title="Exporter">
-                        <i class="fas fa-download"></i>
+                    <button onclick="exportData()" style="background: rgba(255,255,255,0.1); border: none; width: 40px; height: 40px; border-radius: 10px; color: white; cursor: pointer;">
+                        📥
                     </button>
-                    <button class="btn-icon" onclick="switchUser()" title="Changer utilisateur">
-                        <i class="fas fa-sign-out-alt"></i>
+                    <button onclick="showUserScreen()" style="background: rgba(255,255,255,0.1); border: none; width: 40px; height: 40px; border-radius: 10px; color: white; cursor: pointer;">
+                        👥
                     </button>
                 </div>
             </div>
             
-            <div class="stats">
-                <div class="stat-card">
-                    <small>Série</small>
-                    <div style="font-size: 1.5rem; color: var(--primary);" id="streak">0j</div>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div style="font-size: 0.8rem; color: #94a3b8;">Série</div>
+                    <div id="streakDisplay" style="font-size: 1.5rem; color: var(--primary); font-weight: bold;">0j</div>
                 </div>
-                <div class="stat-card">
-                    <small>Aujourd'hui</small>
-                    <div style="font-size: 1.5rem; color: var(--secondary);" id="todayCount">0</div>
+                <div class="stat-item">
+                    <div style="font-size: 0.8rem; color: #94a3b8;">Aujourd'hui</div>
+                    <div id="todayCount" style="font-size: 1.5rem; color: var(--secondary); font-weight: bold;">0</div>
                 </div>
-                <div class="stat-card">
-                    <small>Moyenne</small>
-                    <div style="font-size: 1.5rem;" id="averageGlucose">0.0</div>
+                <div class="stat-item">
+                    <div style="font-size: 0.8rem; color: #94a3b8;">Moyenne</div>
+                    <div id="averageDisplay" style="font-size: 1.5rem; font-weight: bold;">0.0</div>
                 </div>
-                <div class="stat-card">
-                    <small>Objectif</small>
-                    <div style="font-size: 1.5rem; color: var(--primary);" id="dailyProgress">0%</div>
+                <div class="stat-item">
+                    <div style="font-size: 0.8rem; color: #94a3b8;">Objectif</div>
+                    <div id="progressDisplay" style="font-size: 1.5rem; color: var(--primary); font-weight: bold;">0%</div>
                 </div>
             </div>
         </div>
         
         <!-- Navigation -->
         <div class="tabs">
-            <button class="tab active" onclick="switchTab('today')">
-                <i class="fas fa-calendar-day"></i> Aujourd'hui
-            </button>
-            <button class="tab" onclick="switchTab('chart')">
-                <i class="fas fa-chart-line"></i> Courbe
-            </button>
-            <button class="tab" onclick="switchTab('stats')">
-                <i class="fas fa-chart-bar"></i> Stats
-            </button>
-            <button class="tab" onclick="switchTab('badges')">
-                <i class="fas fa-trophy"></i> Badges
-            </button>
+            <button class="tab-btn active" onclick="switchTab('today')">📅 Aujourd'hui</button>
+            <button class="tab-btn" onclick="switchTab('chart')">📈 Courbe</button>
+            <button class="tab-btn" onclick="switchTab('stats')">📊 Stats</button>
+            <button class="tab-btn" onclick="switchTab('badges')">🏆 Badges</button>
         </div>
         
-        <!-- Contenu des onglets -->
+        <!-- Contenu -->
         <div class="container">
             <!-- Onglet Aujourd'hui -->
-            <div id="tabToday" class="tab-content">
-                <div class="card">
-                    <input type="text" id="searchInput" class="form-input" placeholder="🔍 Rechercher..." oninput="searchEntries()">
-                </div>
+            <div id="tabToday">
+                <input type="text" id="searchInput" class="input-field" placeholder="🔍 Rechercher glycémie, médicament, repas..." oninput="filterEntries()">
                 
-                <button id="addButton" class="btn-primary" onclick="showForm()">
-                    <i class="fas fa-plus"></i> Nouvelle mesure
+                <button id="addButton" onclick="showEntryForm()" class="btn-primary">
+                    ＋ Nouvelle mesure
                 </button>
                 
-                <!-- Formulaire -->
-                <div id="entryForm" class="card" style="display: none;">
+                <!-- Formulaire (identique à React) -->
+                <div id="entryForm" class="form-card hidden">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <h3>Nouvelle mesure</h3>
-                        <button class="btn-icon" onclick="hideForm()">
-                            <i class="fas fa-times"></i>
+                        <h3 style="color: var(--secondary);">Nouvelle mesure</h3>
+                        <button onclick="hideEntryForm()" style="background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer;">
+                            ✕
                         </button>
                     </div>
                     
-                    <div class="form-group">
-                        <label class="form-label">📅 Moment</label>
-                        <div class="moment-grid">
-                            <button class="moment-btn active" data-moment="matin" onclick="selectMoment(this)">🌅 Matin</button>
-                            <button class="moment-btn" data-moment="midi" onclick="selectMoment(this)">☀️ Midi</button>
-                            <button class="moment-btn" data-moment="soir" onclick="selectMoment(this)">🌙 Soir</button>
-                            <button class="moment-btn" data-moment="autre" onclick="selectMoment(this)">⭐ Autre</button>
+                    <!-- Moments (identique) -->
+                    <div class="moment-options">
+                        <div class="moment-option selected" data-moment="matin_jeun" onclick="selectMoment(this)">
+                            <div style="font-size: 1.8rem;">🌅</div>
+                            <div>Matin (à jeun)</div>
+                        </div>
+                        <div class="moment-option" data-moment="midi" onclick="selectMoment(this)">
+                            <div style="font-size: 1.8rem;">☀️</div>
+                            <div>Midi</div>
+                        </div>
+                        <div class="moment-option" data-moment="soir" onclick="selectMoment(this)">
+                            <div style="font-size: 1.8rem;">🌙</div>
+                            <div>Soir</div>
+                        </div>
+                        <div class="moment-option" data-moment="autre" onclick="selectMoment(this)">
+                            <div style="font-size: 1.8rem;">⭐</div>
+                            <div>Autre</div>
                         </div>
                     </div>
                     
-                    <div class="form-group">
-                        <label class="form-label">🩸 Glycémie (g/L)</label>
-                        <input type="number" id="glucoseInput" class="form-input" placeholder="1.20" step="0.01" min="0">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">⏰ Heure de mesure</label>
-                        <input type="time" id="timeInput" class="form-input" value="">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">💊 Médicaments (optionnel)</label>
-                        <input type="text" id="medicationInput" class="form-input" placeholder="Nom du médicament">
-                        <div style="display: flex; gap: 10px; margin-top: 10px;">
-                            <input type="text" id="medicationDose" class="form-input" placeholder="Dose" style="flex: 1;">
-                            <input type="time" id="medicationTime" class="form-input" style="flex: 1;">
+                    <!-- Glycémie -->
+                    <div style="background: rgba(59,130,246,0.1); padding: 15px; border-radius: 10px; margin: 20px 0;">
+                        <label style="display: block; margin-bottom: 10px; color: var(--secondary); font-weight: bold;">🩸 Glycémie (g/L)</label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <div>
+                                <input type="number" id="glucoseValue" class="input-field" placeholder="1.20" step="0.01" style="font-size: 1.5rem; text-align: center;">
+                            </div>
+                            <div>
+                                <input type="time" id="measureTime" class="input-field" style="font-size: 1.2rem; text-align: center;">
+                            </div>
                         </div>
-                        <button onclick="addMedication()" style="margin-top: 10px; padding: 10px; background: rgba(59,130,246,0.2); border: none; border-radius: 8px; color: white; width: 100%;">
-                            <i class="fas fa-plus"></i> Ajouter médicament
-                        </button>
-                        <div id="medicationList" style="margin-top: 10px;"></div>
                     </div>
                     
-                    <div class="form-group">
-                        <label class="form-label">🍽️ Repas (optionnel)</label>
-                        <input type="text" id="mealInput" class="form-input" placeholder="Type de repas">
-                        <textarea id="mealContent" class="form-input" placeholder="Contenu du repas" rows="3" style="margin-top: 10px; resize: vertical;"></textarea>
-                        <input type="time" id="mealTime" class="form-input" style="margin-top: 10px;">
+                    <!-- Médicaments -->
+                    <div id="medicationSection">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <label style="color: var(--secondary); font-weight: bold;">💊 Médicaments</label>
+                            <button onclick="addMedicationField()" style="background: rgba(59,130,246,0.3); border: none; padding: 8px 15px; border-radius: 8px; color: white; cursor: pointer;">
+                                ＋ Ajouter
+                            </button>
+                        </div>
+                        <div id="medicationFields"></div>
                     </div>
                     
-                    <div class="form-group">
-                        <label class="form-label">💬 Commentaire</label>
-                        <textarea id="commentInput" class="form-input" placeholder="Notes, ressenti..." rows="3" style="resize: vertical;"></textarea>
+                    <!-- Repas -->
+                    <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; margin: 20px 0;">
+                        <label style="display: block; margin-bottom: 10px; color: var(--secondary); font-weight: bold;">🍽️ Repas (optionnel)</label>
+                        <input type="text" id="mealType" class="input-field" placeholder="Type de repas (ex: Petit-déjeuner)">
+                        <textarea id="mealContent" class="input-field" placeholder="Contenu du repas..." rows="3" style="resize: vertical;"></textarea>
+                        <input type="time" id="mealTime" class="input-field">
                     </div>
                     
-                    <button class="btn-primary" onclick="saveEntry()">
-                        <i class="fas fa-check"></i> Enregistrer
+                    <!-- Commentaire -->
+                    <div>
+                        <label style="display: block; margin-bottom: 10px; color: var(--secondary); font-weight: bold;">💬 Commentaire</label>
+                        <textarea id="comment" class="input-field" placeholder="Notes, ressenti..." rows="3" style="resize: vertical;"></textarea>
+                    </div>
+                    
+                    <button onclick="saveEntry()" class="btn-primary" style="margin-top: 20px;">
+                        ✅ Enregistrer la mesure
                     </button>
                 </div>
                 
@@ -416,10 +369,10 @@
             </div>
             
             <!-- Onglet Courbe -->
-            <div id="tabChart" class="tab-content" style="display: none;">
-                <div class="card">
+            <div id="tabChart" class="hidden">
+                <div class="form-card">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <h3>Courbe glycémique</h3>
+                        <h3 style="color: var(--secondary);">Courbe glycémique</h3>
                         <select id="chartPeriod" onchange="updateChart()" style="padding: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white;">
                             <option value="7">7 jours</option>
                             <option value="14">14 jours</option>
@@ -431,77 +384,80 @@
             </div>
             
             <!-- Onglet Stats -->
-            <div id="tabStats" class="tab-content" style="display: none;">
-                <div class="card">
-                    <h3 style="margin-bottom: 20px;">Statistiques</h3>
-                    
-                    <div style="background: linear-gradient(135deg, rgba(59,130,246,0.2), rgba(6,182,212,0.2)); padding: 20px; border-radius: 12px; margin-bottom: 20px;">
-                        <div style="color: var(--text-light); margin-bottom: 5px;">Temps dans la cible (0.7-1.4 g/L)</div>
-                        <div style="font-size: 2rem; font-weight: bold; color: var(--primary);" id="timeInRange">0%</div>
-                        <div style="height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; margin-top: 10px;">
-                            <div id="timeInRangeBar" style="height: 100%; background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: 4px; width: 0%;"></div>
-                        </div>
-                    </div>
-                    
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;">
-                        <div style="background: rgba(239,68,68,0.2); padding: 15px; border-radius: 10px; text-align: center;">
-                            <div style="font-size: 1.8rem; font-weight: bold; color: var(--danger);" id="hypoCount">0</div>
-                            <div style="font-size: 0.8rem; color: var(--text-light);">Hypoglycémies</div>
-                        </div>
-                        <div style="background: rgba(16,185,129,0.2); padding: 15px; border-radius: 10px; text-align: center;">
-                            <div style="font-size: 1.8rem; font-weight: bold; color: var(--success);" id="normalCount">0</div>
-                            <div style="font-size: 0.8rem; color: var(--text-light);">Normales</div>
-                        </div>
-                        <div style="background: rgba(245,158,11,0.2); padding: 15px; border-radius: 10px; text-align: center;">
-                            <div style="font-size: 1.8rem; font-weight: bold; color: var(--warning);" id="hyperCount">0</div>
-                            <div style="font-size: 0.8rem; color: var(--text-light);">Hyperglycémies</div>
-                        </div>
-                    </div>
+            <div id="tabStats" class="hidden">
+                <div class="form-card">
+                    <h3 style="color: var(--secondary); margin-bottom: 20px;">Statistiques</h3>
+                    <!-- Contenu stats -->
                 </div>
             </div>
             
             <!-- Onglet Badges -->
-            <div id="tabBadges" class="tab-content" style="display: none;">
-                <div class="card">
-                    <h3 style="margin-bottom: 20px;">Badges</h3>
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
-                        <div id="badgeFirst" style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 12px; text-align: center; opacity: 0.3;">
-                            <div style="font-size: 2rem;">🎯</div>
+            <div id="tabBadges" class="hidden">
+                <div class="form-card">
+                    <h3 style="color: var(--secondary); margin-bottom: 20px;">Badges</h3>
+                    <div class="badge-grid">
+                        <div id="badgeFirst" class="badge-card">
+                            <div style="font-size: 2.5rem;">🎯</div>
                             <div style="font-weight: bold; margin-top: 10px;">Première entrée</div>
+                            <div style="font-size: 0.8rem; margin-top: 5px; opacity: 0.8;">Commencer le suivi</div>
                         </div>
-                        <div id="badgeWeek" style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 12px; text-align: center; opacity: 0.3;">
-                            <div style="font-size: 2rem;">🔥</div>
+                        <div id="badgeWeek" class="badge-card">
+                            <div style="font-size: 2.5rem;">🔥</div>
                             <div style="font-weight: bold; margin-top: 10px;">7 jours</div>
+                            <div style="font-size: 0.8rem; margin-top: 5px; opacity: 0.8;">Une semaine de suivi</div>
                         </div>
-                        <div id="badgeFifty" style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 12px; text-align: center; opacity: 0.3;">
-                            <div style="font-size: 2rem;">⭐</div>
+                        <div id="badgeFifty" class="badge-card">
+                            <div style="font-size: 2.5rem;">⭐</div>
                             <div style="font-weight: bold; margin-top: 10px;">50 entrées</div>
+                            <div style="font-size: 0.8rem; margin-top: 5px; opacity: 0.8;">Expert du suivi</div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
         
-        <!-- Bouton d'urgence -->
-        <button style="position: fixed; bottom: 20px; right: 20px; background: var(--danger); color: white; border: none; width: 60px; height: 60px; border-radius: 50%; font-size: 1.5rem; box-shadow: 0 4px 15px rgba(239,68,68,0.4);" onclick="showEmergency()">
-            <i class="fas fa-exclamation-triangle"></i>
+        <!-- Bouton urgence -->
+        <button onclick="showEmergency()" style="position: fixed; bottom: 20px; right: 20px; background: var(--danger); color: white; border: none; width: 60px; height: 60px; border-radius: 50%; font-size: 1.5rem; cursor: pointer; box-shadow: 0 4px 15px rgba(239,68,68,0.4);">
+            ⚠️
         </button>
     </div>
     
-    <!-- Script principal -->
+    <!-- Script principal avec la LOGIQUE IDENTIQUE à React -->
     <script>
-        // Données de l'application
+        // === DONNÉES (identique à React) ===
         let currentUser = null;
         let users = [];
         let entries = [];
         let allEntries = {};
         let streak = 0;
         let badges = [];
-        let medications = [];
-        let selectedMoment = 'matin';
-        let glucoseChart = null;
+        let recentMeds = [];
+        let recentMeals = [];
+        let goals = { min: 0.7, max: 1.4, dailyMeasures: 4 };
+        let selectedMoment = 'matin_jeun';
         
-        // Fonctions de stockage
+        const avatars = ['👤', '👨', '🧑', '👴', '👵', '🧔', '👨‍⚕️', '👩‍⚕️'];
+        
+        // === INITIALISATION ===
+        document.addEventListener('DOMContentLoaded', function() {
+            // Générer les avatars
+            const avatarGrid = document.getElementById('avatarGrid');
+            avatars.forEach(avatar => {
+                const btn = document.createElement('button');
+                btn.className = 'avatar-btn';
+                btn.textContent = avatar;
+                btn.onclick = function() {
+                    document.querySelectorAll('.avatar-btn').forEach(b => b.classList.remove('selected'));
+                    this.classList.add('selected');
+                };
+                avatarGrid.appendChild(btn);
+            });
+            
+            // Charger les utilisateurs
+            loadUsers();
+        });
+        
+        // === STOCKAGE (similaire à React) ===
         function saveToStorage(key, data) {
             localStorage.setItem(`glucotrack_${key}`, JSON.stringify(data));
         }
@@ -511,114 +467,93 @@
             return data ? JSON.parse(data) : null;
         }
         
-        // Initialisation
-        window.onload = function() {
-            setTimeout(() => {
-                document.getElementById('loader').style.display = 'none';
-                loadUsers();
-            }, 1000);
-        };
-        
-        // Gestion des utilisateurs
+        // === GESTION UTILISATEURS (identique) ===
         function loadUsers() {
-            users = loadFromStorage('users') || [];
-            
-            if (users.length > 0) {
-                showUserList();
-            } else {
-                showUserScreen();
+            const savedUsers = loadFromStorage('users');
+            if (savedUsers) {
+                users = savedUsers;
+                updateUserList();
             }
         }
         
-        function showUserList() {
-            const userList = document.getElementById('userList');
-            userList.innerHTML = '';
-            
-            users.forEach(user => {
-                const userDiv = document.createElement('div');
-                userDiv.className = 'entry-card';
-                userDiv.style.cursor = 'pointer';
-                userDiv.onclick = () => selectUser(user);
-                userDiv.innerHTML = `
-                    <div style="display: flex; align-items: center; gap: 15px;">
-                        <div style="font-size: 2rem;">${user.avatar}</div>
-                        <div>
-                            <div style="font-weight: bold; font-size: 1.2rem;">${user.name}</div>
-                            <div style="color: var(--text-light); font-size: 0.9rem;">Continuer</div>
-                        </div>
-                    </div>
-                `;
-                userList.appendChild(userDiv);
-            });
-            
-            showUserScreen();
-        }
-        
-        function showUserScreen() {
-            document.getElementById('userScreen').style.display = 'block';
-            document.getElementById('app').style.display = 'none';
-        }
-        
-        function createUser() {
-            const nameInput = document.getElementById('newUserName');
-            const name = nameInput.value.trim();
-            
-            if (!name) {
-                showAlert('Entrez un nom', 'warning');
+        function updateUserList() {
+            const container = document.getElementById('existingUsers');
+            if (users.length === 0) {
+                container.innerHTML = '';
                 return;
             }
             
-            const avatars = ['👤', '👨', '🧑', '👴', '👵', '🧔', '👨‍⚕️', '👩‍⚕️'];
+            container.innerHTML = '<h3 style="margin-bottom: 15px; color: var(--secondary);">Profils existants :</h3>';
+            users.forEach(user => {
+                const userDiv = document.createElement('div');
+                userDiv.style.cssText = 'background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; margin-bottom: 10px; cursor: pointer; display: flex; align-items: center; gap: 15px;';
+                userDiv.onclick = () => selectUser(user);
+                userDiv.innerHTML = `
+                    <div style="font-size: 2rem;">${user.avatar}</div>
+                    <div>
+                        <div style="font-weight: bold;">${user.name}</div>
+                        <div style="font-size: 0.8rem; opacity: 0.8;">Continuer</div>
+                    </div>
+                `;
+                container.appendChild(userDiv);
+            });
+        }
+        
+        function createUser() {
+            const name = document.getElementById('userNameInput').value.trim();
+            const selectedAvatar = document.querySelector('.avatar-btn.selected');
+            
+            if (!name || !selectedAvatar) {
+                alert('Veuillez saisir un nom et sélectionner un avatar');
+                return;
+            }
+            
             const newUser = {
                 id: Date.now().toString(),
                 name: name,
-                avatar: avatars[Math.floor(Math.random() * avatars.length)],
+                avatar: selectedAvatar.textContent,
                 createdAt: new Date().toISOString()
             };
             
             users.push(newUser);
             saveToStorage('users', users);
             selectUser(newUser);
-            nameInput.value = '';
         }
         
         function selectUser(user) {
             currentUser = user;
             document.getElementById('currentUserName').textContent = user.name;
-            document.getElementById('currentAvatar').textContent = user.avatar;
+            document.getElementById('currentUserAvatar').textContent = user.avatar;
             
+            // Charger les données utilisateur
             loadUserData();
-            showApp();
+            
+            // Passer à l'application
+            document.getElementById('userScreen').classList.add('hidden');
+            document.getElementById('mainApp').classList.remove('hidden');
+            
+            refreshUI();
         }
         
-        function switchUser() {
-            showUserScreen();
+        function showUserScreen() {
+            document.getElementById('mainApp').classList.add('hidden');
+            document.getElementById('userScreen').classList.remove('hidden');
+            updateUserList();
         }
         
-        function showApp() {
-            document.getElementById('userScreen').style.display = 'none';
-            document.getElementById('app').style.display = 'block';
-            refreshData();
-        }
-        
-        // Données utilisateur
+        // === DONNÉES UTILISATEUR (identique) ===
         function loadUserData() {
             if (!currentUser) return;
             
-            const userKey = `user_${currentUser.id}`;
-            const data = loadFromStorage(userKey) || {
-                entries: {},
-                streak: 0,
-                badges: [],
-                medications: []
-            };
+            const userData = loadFromStorage(`user_${currentUser.id}`) || {};
             
-            allEntries = data.entries || {};
-            streak = data.streak || 0;
-            badges = data.badges || [];
-            medications = data.medications || [];
+            allEntries = userData.entries || {};
+            streak = userData.streak || 0;
+            badges = userData.badges || [];
+            recentMeds = userData.recentMeds || [];
+            recentMeals = userData.recentMeals || [];
             
-            // Mettre à jour les entrées du jour
+            // Charger les entrées du jour
             const today = new Date().toISOString().split('T')[0];
             entries = allEntries[today] || [];
         }
@@ -626,298 +561,214 @@
         function saveUserData() {
             if (!currentUser) return;
             
-            const userKey = `user_${currentUser.id}`;
-            const data = {
+            const userData = {
                 entries: allEntries,
                 streak: streak,
                 badges: badges,
-                medications: medications,
+                recentMeds: recentMeds,
+                recentMeals: recentMeals,
+                goals: goals,
                 lastUpdated: new Date().toISOString()
             };
             
-            saveToStorage(userKey, data);
+            saveToStorage(`user_${currentUser.id}`, userData);
         }
         
-        // Interface
-        function showAlert(message, type = 'success') {
-            const alertDiv = document.getElementById('alert');
-            alertDiv.textContent = message;
-            alertDiv.className = `alert alert-${type}`;
-            alertDiv.style.display = 'block';
+        // === FORMULAIRE (identique à React) ===
+        function showEntryForm() {
+            document.getElementById('entryForm').classList.remove('hidden');
+            document.getElementById('addButton').classList.add('hidden');
             
-            setTimeout(() => {
-                alertDiv.style.display = 'none';
-            }, 4000);
+            // Initialiser l'heure actuelle
+            const now = new Date();
+            document.getElementById('measureTime').value = 
+                now.getHours().toString().padStart(2, '0') + ':' + 
+                now.getMinutes().toString().padStart(2, '0');
         }
         
-        function switchTab(tabName) {
-            // Mettre à jour les boutons
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.classList.remove('active');
+        function hideEntryForm() {
+            document.getElementById('entryForm').classList.add('hidden');
+            document.getElementById('addButton').classList.remove('hidden');
+            resetForm();
+        }
+        
+        function selectMoment(element) {
+            document.querySelectorAll('.moment-option').forEach(opt => {
+                opt.classList.remove('selected');
             });
-            event.target.classList.add('active');
-            
-            // Afficher le bon contenu
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.style.display = 'none';
-            });
-            document.getElementById(`tab${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`).style.display = 'block';
-            
-            if (tabName === 'chart') {
-                setTimeout(() => {
-                    if (glucoseChart) glucoseChart.destroy();
-                    createChart();
-                }, 100);
-            } else if (tabName === 'stats') {
-                updateStats();
-            } else if (tabName === 'badges') {
-                updateBadges();
-            }
+            element.classList.add('selected');
+            selectedMoment = element.getAttribute('data-moment');
         }
         
-        // Formulaire
-        function showForm() {
-            document.getElementById('entryForm').style.display = 'block';
-            document.getElementById('addButton').style.display = 'none';
-            document.getElementById('timeInput').value = new Date().toTimeString().substring(0, 5);
-        }
-        
-        function hideForm() {
-            document.getElementById('entryForm').style.display = 'none';
-            document.getElementById('addButton').style.display = 'block';
-        }
-        
-        function selectMoment(button) {
-            document.querySelectorAll('.moment-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            button.classList.add('active');
-            selectedMoment = button.getAttribute('data-moment');
-        }
-        
-        function addMedication() {
-            const name = document.getElementById('medicationInput').value.trim();
-            const dose = document.getElementById('medicationDose').value.trim();
-            const time = document.getElementById('medicationTime').value;
+        function addMedicationField() {
+            const container = document.getElementById('medicationFields');
+            const fieldId = Date.now();
             
-            if (!name) {
-                showAlert('Entrez un nom de médicament', 'warning');
-                return;
-            }
-            
-            const list = document.getElementById('medicationList');
-            const medDiv = document.createElement('div');
-            medDiv.className = 'entry-card';
-            medDiv.style.marginTop = '5px';
-            medDiv.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <strong>${name}</strong> • ${dose} • ${time}
+            const fieldHTML = `
+                <div id="medField_${fieldId}" style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; margin-bottom: 10px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <div style="color: var(--secondary); font-weight: bold;">Médicament</div>
+                        <button onclick="removeMedicationField('${fieldId}')" style="background: none; border: none; color: var(--danger); cursor: pointer;">✕</button>
                     </div>
-                    <button onclick="this.parentElement.parentElement.remove()" style="background: none; border: none; color: var(--danger);">
-                        <i class="fas fa-times"></i>
-                    </button>
+                    <input type="text" id="medName_${fieldId}" class="input-field" placeholder="Nom du médicament" style="margin-bottom: 10px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <input type="text" id="medDose_${fieldId}" class="input-field" placeholder="Dose">
+                        <input type="time" id="medTime_${fieldId}" class="input-field">
+                    </div>
                 </div>
             `;
-            list.appendChild(medDiv);
             
-            // Sauvegarder dans les récents
-            if (!medications.includes(name)) {
-                medications.push(name);
-                if (medications.length > 5) medications.shift();
-            }
-            
-            // Réinitialiser les champs
-            document.getElementById('medicationInput').value = '';
-            document.getElementById('medicationDose').value = '';
+            container.insertAdjacentHTML('beforeend', fieldHTML);
         }
         
-        function saveEntry() {
-            const glucose = parseFloat(document.getElementById('glucoseInput').value);
-            const time = document.getElementById('timeInput').value;
+        function removeMedicationField(id) {
+            document.getElementById(`medField_${id}`).remove();
+        }
+        
+        function getMedicationsFromForm() {
+            const medications = [];
+            const fields = document.querySelectorAll('[id^="medField_"]');
             
-            if (!glucose || !time) {
-                showAlert('Glycémie et heure requis', 'warning');
+            fields.forEach(field => {
+                const id = field.id.replace('medField_', '');
+                const name = document.getElementById(`medName_${id}`).value.trim();
+                const dose = document.getElementById(`medDose_${id}`).value.trim();
+                const time = document.getElementById(`medTime_${id}`).value;
+                
+                if (name) {
+                    medications.push({ name, dose, time });
+                }
+            });
+            
+            return medications;
+        }
+        
+        function resetForm() {
+            document.getElementById('glucoseValue').value = '';
+            document.getElementById('mealType').value = '';
+            document.getElementById('mealContent').value = '';
+            document.getElementById('mealTime').value = '';
+            document.getElementById('comment').value = '';
+            document.getElementById('medicationFields').innerHTML = '';
+            
+            // Réinitialiser le moment
+            document.querySelectorAll('.moment-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            document.querySelector('.moment-option[data-moment="matin_jeun"]').classList.add('selected');
+            selectedMoment = 'matin_jeun';
+        }
+        
+        // === SAUVEGARDE ENTRÉE (logique identique) ===
+        function saveEntry() {
+            const glucose = parseFloat(document.getElementById('glucoseValue').value);
+            const measureTime = document.getElementById('measureTime').value;
+            
+            if (!glucose || !measureTime) {
+                alert('Veuillez saisir la glycémie et l\'heure de mesure');
                 return;
             }
             
-            // Alerte glycémie
+            // Vérifier les alertes glycémiques (identique à React)
+            let alertMsg = '';
+            let alertType = '';
+            
             if (glucose < 0.6) {
-                showAlert('⚠️ Hypoglycémie sévère ! Sucre rapide immédiatement.', 'danger');
+                alertMsg = '⚠️ Hypoglycémie sévère ! Consommez du sucre rapide immédiatement.';
+                alertType = 'danger';
             } else if (glucose < 0.7) {
-                showAlert('⚠️ Glycémie basse. Surveillez votre état.', 'warning');
+                alertMsg = '⚠️ Glycémie basse. Surveillez votre état.';
+                alertType = 'warning';
             } else if (glucose > 2.5) {
-                showAlert('⚠️ Hyperglycémie sévère ! Consultez un médecin.', 'danger');
+                alertMsg = '⚠️ Hyperglycémie sévère ! Consultez un médecin.';
+                alertType = 'danger';
             } else if (glucose > 1.8) {
-                showAlert('⚠️ Glycémie élevée. Hydratez-vous.', 'warning');
+                alertMsg = '⚠️ Glycémie élevée. Hydratez-vous.';
+                alertType = 'warning';
             } else {
-                showAlert('✅ Glycémie dans la norme !', 'success');
+                alertMsg = '✅ Glycémie dans la norme !';
+                alertType = 'success';
             }
             
-            // Créer l'entrée
-            const entry = {
+            // Afficher l'alerte
+            showAlert(alertMsg, alertType);
+            
+            // Récupérer les médicaments
+            const medications = getMedicationsFromForm();
+            
+            // Créer l'entrée (identique à React)
+            const newEntry = {
                 id: Date.now(),
                 moment: selectedMoment,
                 glucose: glucose,
-                time: time,
-                meal: document.getElementById('mealInput').value,
+                measureTime: measureTime,
+                meal: document.getElementById('mealType').value,
                 mealContent: document.getElementById('mealContent').value,
                 mealTime: document.getElementById('mealTime').value,
-                comment: document.getElementById('commentInput').value,
+                medications: medications,
+                comment: document.getElementById('comment').value,
                 timestamp: new Date().toISOString()
             };
             
             // Ajouter aux entrées du jour
             const today = new Date().toISOString().split('T')[0];
             if (!allEntries[today]) allEntries[today] = [];
-            allEntries[today].push(entry);
+            allEntries[today].push(newEntry);
             entries = allEntries[today];
+            
+            // Mettre à jour les historiques (identique)
+            medications.forEach(med => {
+                if (med.name && !recentMeds.includes(med.name)) {
+                    recentMeds.unshift(med.name);
+                    if (recentMeds.length > 5) recentMeds.pop();
+                }
+            });
+            
+            const meal = document.getElementById('mealType').value;
+            if (meal) {
+                recentMeals = [meal, ...recentMeals.filter(m => m !== meal)].slice(0, 5);
+            }
             
             // Mettre à jour la série
             streak++;
             
-            // Vérifier les badges
+            // Vérifier les badges (identique)
             checkBadges();
             
             // Sauvegarder
             saveUserData();
             
-            // Réinitialiser le formulaire
-            document.getElementById('glucoseInput').value = '';
-            document.getElementById('mealInput').value = '';
-            document.getElementById('mealContent').value = '';
-            document.getElementById('mealTime').value = '';
-            document.getElementById('commentInput').value = '';
-            document.getElementById('medicationList').innerHTML = '';
-            
-            hideForm();
-            refreshData();
+            // Réinitialiser et fermer
+            resetForm();
+            hideEntryForm();
+            refreshUI();
         }
         
-        // Affichage des données
-        function refreshData() {
-            const today = new Date().toISOString().split('T')[0];
-            entries = allEntries[today] || [];
+        function showAlert(message, type) {
+            // Créer une alerte temporaire
+            const alertDiv = document.createElement('div');
+            alertDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                padding: 15px 25px;
+                border-radius: 10px;
+                font-weight: bold;
+                z-index: 1000;
+                background: ${type === 'danger' ? '#ef4444' : type === 'warning' ? '#f59e0b' : '#10b981'};
+                color: white;
+                animation: slideIn 0.3s ease;
+            `;
+            alertDiv.textContent = message;
+            document.body.appendChild(alertDiv);
             
-            // Mettre à jour les stats
-            document.getElementById('streak').textContent = streak + 'j';
-            document.getElementById('todayCount').textContent = entries.length;
-            document.getElementById('averageGlucose').textContent = calculateAverage().toFixed(1);
-            document.getElementById('dailyProgress').textContent = Math.min((entries.length / 4) * 100, 100).toFixed(0) + '%';
-            
-            // Afficher les entrées
-            displayEntries();
-            
-            // Mettre à jour le graphique si actif
-            if (document.getElementById('tabChart').style.display !== 'none') {
-                if (glucoseChart) glucoseChart.destroy();
-                createChart();
-            }
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 4000);
         }
         
-        function displayEntries() {
-            const container = document.getElementById('entriesList');
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            
-            if (entries.length === 0) {
-                container.innerHTML = `
-                    <div class="card" style="text-align: center; color: var(--text-light); padding: 40px 20px;">
-                        <i class="fas fa-heartbeat" style="font-size: 3rem; margin-bottom: 20px; opacity: 0.5;"></i>
-                        <p>Aucune mesure aujourd'hui</p>
-                        <p style="font-size: 0.9rem;">Commencez votre suivi</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            let filteredEntries = entries;
-            if (searchTerm) {
-                filteredEntries = entries.filter(entry => 
-                    entry.glucose.toString().includes(searchTerm) ||
-                    entry.comment.toLowerCase().includes(searchTerm) ||
-                    entry.meal.toLowerCase().includes(searchTerm)
-                );
-            }
-            
-            container.innerHTML = '';
-            filteredEntries.forEach(entry => {
-                const entryDiv = document.createElement('div');
-                entryDiv.className = 'entry-card';
-                
-                let momentIcon = '🌅';
-                if (entry.moment === 'midi') momentIcon = '☀️';
-                if (entry.moment === 'soir') momentIcon = '🌙';
-                if (entry.moment === 'autre') momentIcon = '⭐';
-                
-                let glucoseColor = 'var(--success)';
-                if (entry.glucose < 0.7) glucoseColor = 'var(--danger)';
-                if (entry.glucose > 1.8) glucoseColor = 'var(--warning)';
-                
-                entryDiv.innerHTML = `
-                    <div class="entry-header">
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <div style="font-size: 1.8rem;">${momentIcon}</div>
-                            <div>
-                                <div style="font-weight: bold; font-size: 1.2rem;">${entry.time}</div>
-                                <div style="color: var(--text-light); font-size: 0.9rem;">${entry.moment}</div>
-                            </div>
-                        </div>
-                        <div class="glucose-value" style="background: linear-gradient(135deg, ${glucoseColor}, ${entry.glucose < 0.7 ? '#f87171' : entry.glucose > 1.8 ? '#fbbf24' : '#34d399'});">
-                            ${entry.glucose}
-                        </div>
-                    </div>
-                    
-                    ${entry.meal ? `
-                        <div style="margin-top: 10px; padding: 10px; background: rgba(6,182,212,0.1); border-radius: 8px;">
-                            <div style="display: flex; align-items: center; gap: 8px; color: var(--secondary);">
-                                <i class="fas fa-utensils"></i>
-                                <strong>${entry.meal}</strong>
-                                ${entry.mealTime ? `<span style="margin-left: auto;">${entry.mealTime}</span>` : ''}
-                            </div>
-                            ${entry.mealContent ? `<div style="margin-top: 5px; font-size: 0.9rem;">${entry.mealContent}</div>` : ''}
-                        </div>
-                    ` : ''}
-                    
-                    ${entry.comment ? `
-                        <div style="margin-top: 10px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; font-size: 0.9rem;">
-                            <i class="fas fa-comment"></i> ${entry.comment}
-                        </div>
-                    ` : ''}
-                    
-                    <div style="margin-top: 15px; display: flex; justify-content: flex-end;">
-                        <button onclick="deleteEntry('${entry.id}')" style="background: rgba(239,68,68,0.2); color: var(--danger); border: none; padding: 8px 15px; border-radius: 8px; font-size: 0.9rem;">
-                            <i class="fas fa-trash"></i> Supprimer
-                        </button>
-                    </div>
-                `;
-                
-                container.appendChild(entryDiv);
-            });
-        }
-        
-        function searchEntries() {
-            displayEntries();
-        }
-        
-        function deleteEntry(id) {
-            if (!confirm('Supprimer cette mesure ?')) return;
-            
-            const today = new Date().toISOString().split('T')[0];
-            allEntries[today] = allEntries[today].filter(entry => entry.id.toString() !== id);
-            entries = allEntries[today] || [];
-            
-            saveUserData();
-            refreshData();
-            showAlert('Mesure supprimée', 'success');
-        }
-        
-        // Calculs
-        function calculateAverage() {
-            if (entries.length === 0) return 0;
-            const sum = entries.reduce((total, entry) => total + entry.glucose, 0);
-            return sum / entries.length;
-        }
-        
+        // === BADGES (identique) ===
         function checkBadges() {
             const totalEntries = Object.values(allEntries).flat().length;
             const newBadges = [...badges];
@@ -938,184 +789,247 @@
             if (newBadges.length > badges.length) {
                 badges = newBadges;
                 saveUserData();
-                updateBadges();
+                updateBadgesDisplay();
             }
         }
         
-        function updateBadges() {
-            document.getElementById('badgeFirst').style.opacity = badges.includes('first') ? '1' : '0.3';
-            document.getElementById('badgeWeek').style.opacity = badges.includes('week') ? '1' : '0.3';
-            document.getElementById('badgeFifty').style.opacity = badges.includes('fifty') ? '1' : '0.3';
+        function updateBadgesDisplay() {
+            document.getElementById('badgeFirst').className = badges.includes('first') ? 
+                'badge-card unlocked' : 'badge-card';
+            document.getElementById('badgeWeek').className = badges.includes('week') ? 
+                'badge-card unlocked' : 'badge-card';
+            document.getElementById('badgeFifty').className = badges.includes('fifty') ? 
+                'badge-card unlocked' : 'badge-card';
         }
         
-        // Graphique
-        function createChart() {
-            const ctx = document.getElementById('glucoseChart').getContext('2d');
-            const period = parseInt(document.getElementById('chartPeriod').value);
+        // === AFFICHAGE ===
+        function refreshUI() {
+            const today = new Date().toISOString().split('T')[0];
+            entries = allEntries[today] || [];
             
-            const data = getChartData(period);
+            // Mettre à jour les stats
+            document.getElementById('streakDisplay').textContent = streak + 'j';
+            document.getElementById('todayCount').textContent = entries.length;
+            document.getElementById('averageDisplay').textContent = calculateAverage().toFixed(1);
+            document.getElementById('progressDisplay').textContent = 
+                Math.min((entries.length / goals.dailyMeasures) * 100, 100).toFixed(0) + '%';
             
-            glucoseChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: data.labels,
-                    datasets: [{
-                        label: 'Glycémie (g/L)',
-                        data: data.values,
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        borderWidth: 3,
-                        fill: true,
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            min: 0,
-                            max: 3,
-                            grid: {
-                                color: 'rgba(255,255,255,0.1)'
-                            },
-                            ticks: {
-                                color: '#cbd5e1'
-                            }
-                        },
-                        x: {
-                            grid: {
-                                color: 'rgba(255,255,255,0.1)'
-                            },
-                            ticks: {
-                                color: '#cbd5e1'
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            labels: {
-                                color: '#f8fafc'
-                            }
-                        },
-                        tooltip: {
-                            backgroundColor: 'rgba(30, 41, 59, 0.9)',
-                            titleColor: '#f8fafc',
-                            bodyColor: '#f8fafc',
-                            borderColor: 'rgba(59, 130, 246, 0.5)',
-                            borderWidth: 1
-                        }
-                    }
-                }
-            });
+            // Afficher les entrées
+            displayEntries();
             
-            // Ajouter les lignes de référence
-            Chart.helpers.each(glucoseChart.data.datasets.forEach(function(dataset, i) {
-                const meta = glucoseChart.getDatasetMeta(i);
-                Chart.helpers.each(meta.data.forEach(function(element, index) {
-                    // Ajouter des points cliquables
-                    element._model.radius = 6;
-                }), glucoseChart);
-            }), glucoseChart);
+            // Mettre à jour les badges
+            updateBadgesDisplay();
         }
         
-        function getChartData(days) {
-            const labels = [];
-            const values = [];
-            const now = new Date();
-            
-            for (let i = days - 1; i >= 0; i--) {
-                const date = new Date();
-                date.setDate(now.getDate() - i);
-                const dateStr = date.toISOString().split('T')[0];
-                
-                if (allEntries[dateStr] && allEntries[dateStr].length > 0) {
-                    const dailyAvg = allEntries[dateStr].reduce((sum, entry) => sum + entry.glucose, 0) / allEntries[dateStr].length;
-                    labels.push(dateStr.substring(5)); // Format "MM-JJ"
-                    values.push(dailyAvg.toFixed(1));
-                } else {
-                    labels.push(dateStr.substring(5));
-                    values.push(null);
-                }
-            }
-            
-            return { labels, values };
+        function calculateAverage() {
+            if (entries.length === 0) return 0;
+            const sum = entries.reduce((total, entry) => total + entry.glucose, 0);
+            return sum / entries.length;
         }
         
-        function updateChart() {
-            if (glucoseChart) glucoseChart.destroy();
-            createChart();
-        }
-        
-        // Statistiques
-        function updateStats() {
-            const allData = Object.values(allEntries).flat();
+        function displayEntries() {
+            const container = document.getElementById('entriesList');
+            const searchTerm = document.getElementById('searchInput')?.value.toLowerCase() || '';
             
-            if (allData.length === 0) {
-                document.getElementById('timeInRange').textContent = '0%';
-                document.getElementById('timeInRangeBar').style.width = '0%';
-                document.getElementById('hypoCount').textContent = '0';
-                document.getElementById('normalCount').textContent = '0';
-                document.getElementById('hyperCount').textContent = '0';
+            if (entries.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px 20px; color: #94a3b8;">
+                        <div style="font-size: 3rem; margin-bottom: 20px;">📊</div>
+                        <p>Aucune mesure aujourd'hui</p>
+                        <p style="font-size: 0.9rem;">Commencez votre suivi</p>
+                    </div>
+                `;
                 return;
             }
             
-            // Temps dans la cible
-            const inRange = allData.filter(d => d.glucose >= 0.7 && d.glucose <= 1.4).length;
-            const timeInRange = ((inRange / allData.length) * 100).toFixed(0);
-            document.getElementById('timeInRange').textContent = timeInRange + '%';
-            document.getElementById('timeInRangeBar').style.width = timeInRange + '%';
+            let filteredEntries = entries;
+            if (searchTerm) {
+                filteredEntries = entries.filter(entry => {
+                    return (
+                        entry.glucose.toString().includes(searchTerm) ||
+                        entry.measureTime.includes(searchTerm) ||
+                        (entry.meal && entry.meal.toLowerCase().includes(searchTerm)) ||
+                        (entry.comment && entry.comment.toLowerCase().includes(searchTerm)) ||
+                        entry.medications.some(m => m.name.toLowerCase().includes(searchTerm))
+                    );
+                });
+            }
             
-            // Compteurs
-            document.getElementById('hypoCount').textContent = allData.filter(d => d.glucose < 0.7).length;
-            document.getElementById('normalCount').textContent = allData.filter(d => d.glucose >= 0.7 && d.glucose <= 1.8).length;
-            document.getElementById('hyperCount').textContent = allData.filter(d => d.glucose > 1.8).length;
+            container.innerHTML = '';
+            filteredEntries.forEach(entry => {
+                // Déterminer la couleur (identique à React)
+                let glucoseColor = '#10b981'; // normal
+                if (entry.glucose < 0.7) glucoseColor = '#ef4444'; // hypo
+                if (entry.glucose > 1.8) glucoseColor = '#f59e0b'; // hyper
+                
+                // Icône du moment
+                let momentIcon = '🌅';
+                if (entry.moment === 'midi') momentIcon = '☀️';
+                if (entry.moment === 'soir') momentIcon = '🌙';
+                if (entry.moment === 'autre') momentIcon = '⭐';
+                
+                const entryHTML = `
+                    <div class="entry-item">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="font-size: 1.8rem;">${momentIcon}</div>
+                                <div>
+                                    <div style="font-weight: bold; font-size: 1.2rem;">${entry.measureTime}</div>
+                                    <div style="color: #94a3b8; font-size: 0.9rem;">
+                                        ${entry.moment === 'matin_jeun' ? 'Matin (à jeun)' : 
+                                          entry.moment === 'midi' ? 'Midi' :
+                                          entry.moment === 'soir' ? 'Soir' : 'Autre'}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="glucose-badge" style="background: linear-gradient(135deg, ${glucoseColor}, ${entry.glucose < 0.7 ? '#f87171' : entry.glucose > 1.8 ? '#fbbf24' : '#34d399'});">
+                                ${entry.glucose}
+                            </div>
+                        </div>
+                        
+                        ${entry.medications.length > 0 ? `
+                            <div style="margin-bottom: 10px;">
+                                ${entry.medications.map(med => `
+                                    <div style="background: rgba(59,130,246,0.1); padding: 8px 12px; border-radius: 8px; margin-bottom: 5px; font-size: 0.9rem;">
+                                        💊 ${med.name} • ${med.dose} • ${med.time}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                        
+                        ${entry.meal ? `
+                            <div style="background: rgba(6,182,212,0.1); padding: 12px; border-radius: 8px; margin-bottom: 10px;">
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
+                                    <div style="color: var(--secondary);">🍽️</div>
+                                    <strong>${entry.meal}</strong>
+                                    ${entry.mealTime ? `<span style="margin-left: auto;">${entry.mealTime}</span>` : ''}
+                                </div>
+                                ${entry.mealContent ? `
+                                    <div style="font-size: 0.9rem; color: #94a3b8;">${entry.mealContent}</div>
+                                ` : ''}
+                            </div>
+                        ` : ''}
+                        
+                        ${entry.comment ? `
+                            <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; margin-top: 10px; font-size: 0.9rem;">
+                                💬 ${entry.comment}
+                            </div>
+                        ` : ''}
+                        
+                        <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
+                            <button onclick="deleteEntry(${entry.id})" style="background: rgba(239,68,68,0.2); color: var(--danger); border: none; padding: 8px 15px; border-radius: 8px; font-size: 0.9rem; cursor: pointer;">
+                                Supprimer
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                container.insertAdjacentHTML('beforeend', entryHTML);
+            });
         }
         
-        // Export
+        function filterEntries() {
+            displayEntries();
+        }
+        
+        function deleteEntry(entryId) {
+            if (!confirm('Supprimer cette mesure ?')) return;
+            
+            const today = new Date().toISOString().split('T')[0];
+            allEntries[today] = allEntries[today].filter(entry => entry.id !== entryId);
+            entries = allEntries[today] || [];
+            
+            saveUserData();
+            refreshUI();
+            showAlert('Mesure supprimée', 'success');
+        }
+        
+        // === NAVIGATION ===
+        function switchTab(tabName) {
+            // Mettre à jour les boutons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Afficher le bon onglet
+            document.getElementById('tabToday').classList.add('hidden');
+            document.getElementById('tabChart').classList.add('hidden');
+            document.getElementById('tabStats').classList.add('hidden');
+            document.getElementById('tabBadges').classList.add('hidden');
+            
+            document.getElementById(`tab${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`).classList.remove('hidden');
+            
+            if (tabName === 'chart') {
+                // Initialiser le graphique si nécessaire
+                setTimeout(initializeChart, 100);
+            }
+        }
+        
+        // === GRAPHIQUE ===
+        function initializeChart() {
+            // Code du graphique à implémenter
+            console.log('Initialisation du graphique');
+        }
+        
+        function updateChart() {
+            // Mettre à jour le graphique
+            console.log('Mise à jour du graphique');
+        }
+        
+        // === EXPORT ===
         function exportData() {
-            const dataStr = JSON.stringify({
+            const data = {
                 user: currentUser,
                 entries: allEntries,
                 stats: {
                     streak: streak,
                     average: calculateAverage(),
                     badges: badges
-                }
-            }, null, 2);
+                },
+                exportDate: new Date().toISOString()
+            };
             
+            const dataStr = JSON.stringify(data, null, 2);
             const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-            const exportFileDefaultName = `glucotrack_${currentUser.name}_${new Date().toISOString().split('T')[0]}.json`;
             
-            const linkElement = document.createElement('a');
-            linkElement.setAttribute('href', dataUri);
-            linkElement.setAttribute('download', exportFileDefaultName);
-            linkElement.click();
+            const link = document.createElement('a');
+            link.setAttribute('href', dataUri);
+            link.setAttribute('download', `GlucoTrack_${currentUser.name}_${new Date().toISOString().split('T')[0]}.json`);
+            link.click();
             
-            showAlert('✅ Données exportées en JSON', 'success');
+            showAlert('✅ Données exportées', 'success');
         }
         
-        // Urgence
+        // === URGENCE ===
         function showEmergency() {
-            const emergencyMsg = `URGENCE DIABÈTE
+            alert(`URGENCE DIABÈTE
 
-En cas d'hypoglycémie sévère (<0.6 g/L) :
-1. Consommez 15-20g de sucre rapide
-2. Contrôlez après 15 minutes
-3. Si pas d'amélioration, appelez le 15
+Glycémie < 0.6 g/L (hypoglycémie sévère) :
+1. 15-20g de sucre rapide
+2. Contrôler après 15 minutes
+3. Si pas d'amélioration : SAMU 15
 
-En cas d'hyperglycémie sévère (>2.5 g/L) :
-1. Buvez de l'eau
-2. Ne faites pas d'exercice
-3. Consultez un médecin
+Glycémie > 2.5 g/L (hyperglycémie sévère) :
+1. Boire de l'eau
+2. Ne pas faire d'exercice
+3. Contacter médecin
 
-Contacts d'urgence :
-- Médecin traitant : [NUMÉRO]
-- SAMU : 15
-- Urgences : 112`;
-
-            alert(emergencyMsg);
+Contacts :
+• SAMU : 15
+• Urgences : 112
+• Votre médecin : [NUMÉRO]`);
         }
+        
+        // Ajouter du CSS pour les animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { top: -100px; opacity: 0; }
+                to { top: 20px; opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
     </script>
 </body>
 </html>
