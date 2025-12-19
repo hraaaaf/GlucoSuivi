@@ -1,1473 +1,371 @@
-import React, { useState, useEffect } from ‘react’;
-import { Calendar, Pill, Utensils, TrendingUp, Award, Download, Share2, AlertCircle, Plus, X, Check, LogOut, Activity, HelpCircle, ChevronRight, Trash2 } from ‘lucide-react’;
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from ‘recharts’;
-
-const GlucoTrack = () => {
-const [activeTab, setActiveTab] = useState(‘today’);
-const [entries, setEntries] = useState([]);
-const [allEntries, setAllEntries] = useState({});
-const [showAddForm, setShowAddForm] = useState(false);
-const [showUserSelect, setShowUserSelect] = useState(true);
-const [showExportMenu, setShowExportMenu] = useState(false);
-const [currentUser, setCurrentUser] = useState(null);
-const [users, setUsers] = useState([]);
-const [newUserName, setNewUserName] = useState(’’);
-const [streak, setStreak] = useState(0);
-const [badges, setBadges] = useState([]);
-const [loading, setLoading] = useState(true);
-const [chartPeriod, setChartPeriod] = useState(‘7j’);
-const [recentMeds, setRecentMeds] = useState([]);
-const [recentMeals, setRecentMeals] = useState([]);
-const [showAlert, setShowAlert] = useState(false);
-const [alertMessage, setAlertMessage] = useState(’’);
-const [alertType, setAlertType] = useState(‘info’);
-const [goals, setGoals] = useState({ min: 0.7, max: 1.4, dailyMeasures: 4 });
-const [showTutorial, setShowTutorial] = useState(false);
-const [tutorialStep, setTutorialStep] = useState(0);
-const [darkMode, setDarkMode] = useState(true);
-const [searchQuery, setSearchQuery] = useState(’’);
-const [selectedPoint, setSelectedPoint] = useState(null);
-
-const [formData, setFormData] = useState({
-moment: ‘matin_jeun’,
-glucose: ‘’,
-measureTime: ‘’,
-meal: ‘’,
-mealContent: ‘’,
-mealTime: ‘’,
-medications: [],
-comment: ‘’
-});
-
-const avatars = [‘👤’, ‘👨’, ‘🧑’, ‘👴’, ‘👵’, ‘🧔’, ‘👨‍⚕️’, ‘👩‍⚕️’];
-
-const moments = [
-{ id: ‘matin_jeun’, label: ‘🌅 Matin (à jeun)’, icon: ‘🌅’ },
-{ id: ‘midi’, label: ‘☀️ Midi’, icon: ‘☀️’ },
-{ id: ‘soir’, label: ‘🌙 Soir’, icon: ‘🌙’ },
-{ id: ‘autre’, label: ‘⭐ Autre’, icon: ‘⭐’ }
-];
-
-useEffect(() => {
-loadUsers();
-}, []);
-
-useEffect(() => {
-if (currentUser) {
-loadUserData();
-}
-}, [currentUser]);
-
-const loadUsers = async () => {
-try {
-const result = await window.storage.get(‘users’, true);
-if (result?.value) {
-setUsers(JSON.parse(result.value));
-}
-} catch (e) {
-console.log(‘No users yet’);
-}
-setLoading(false);
-};
-
-const createUser = async () => {
-if (!newUserName.trim()) return;
-
-```
-const newUser = {
-  id: Date.now().toString(),
-  name: newUserName,
-  avatar: avatars[Math.floor(Math.random() * avatars.length)],
-  createdAt: new Date().toISOString()
-};
-
-const updatedUsers = [...users, newUser];
-setUsers(updatedUsers);
-await window.storage.set('users', JSON.stringify(updatedUsers), true);
-
-setCurrentUser(newUser);
-setShowUserSelect(false);
-setNewUserName('');
-```
-
-};
-
-const selectUser = (user) => {
-setCurrentUser(user);
-setShowUserSelect(false);
-};
-
-const loadUserData = async () => {
-try {
-const days = 30;
-const allDates = [];
-for (let i = 0; i < days; i++) {
-const date = new Date();
-date.setDate(date.getDate() - i);
-allDates.push(date.toISOString().split(‘T’)[0]);
-}
-
-```
-  const entriesData = {};
-  
-  for (const date of allDates) {
-    try {
-      const result = await window.storage.get(`entries:${currentUser.id}:${date}`);
-      if (result?.value) {
-        entriesData[date] = JSON.parse(result.value);
-      }
-    } catch (e) {
-      entriesData[date] = [];
-    }
-  }
-  
-  setAllEntries(entriesData);
-  
-  const today = new Date().toISOString().split('T')[0];
-  setEntries(entriesData[today] || []);
-  
-  const streakData = await window.storage.get(`streak:${currentUser.id}`);
-  if (streakData?.value) {
-    setStreak(parseInt(streakData.value));
-  }
-  
-  const badgeData = await window.storage.get(`badges:${currentUser.id}`);
-  if (badgeData?.value) {
-    setBadges(JSON.parse(badgeData.value));
-  }
-
-  const goalsData = await window.storage.get(`goals:${currentUser.id}`);
-  if (goalsData?.value) {
-    setGoals(JSON.parse(goalsData.value));
-  }
-
-  const recentMedsData = await window.storage.get(`recent_meds:${currentUser.id}`);
-  if (recentMedsData?.value) {
-    setRecentMeds(JSON.parse(recentMedsData.value));
-  }
-
-  const recentMealsData = await window.storage.get(`recent_meals:${currentUser.id}`);
-  if (recentMealsData?.value) {
-    setRecentMeals(JSON.parse(recentMealsData.value));
-  }
-
-  const tutorialData = await window.storage.get(`tutorial_done:${currentUser.id}`);
-  if (!tutorialData) {
-    setShowTutorial(true);
-  }
-
-  const themeData = await window.storage.get(`dark_mode:${currentUser.id}`);
-  if (themeData?.value) {
-    setDarkMode(themeData.value === 'true');
-  }
-} catch (e) {
-  console.log('Error loading user data:', e);
-}
-```
-
-};
-
-const addMedication = () => {
-setFormData({
-…formData,
-medications: […formData.medications, { name: ‘’, dose: ‘’, time: ‘’ }]
-});
-};
-
-const removeMedication = (index) => {
-setFormData({
-…formData,
-medications: formData.medications.filter((_, i) => i !== index)
-});
-};
-
-const updateMedication = (index, field, value) => {
-const updated = […formData.medications];
-updated[index][field] = value;
-setFormData({ …formData, medications: updated });
-};
-
-const saveEntry = async () => {
-if (!formData.glucose || !formData.measureTime) return;
-
-```
-const glucoseValue = parseFloat(formData.glucose);
-
-if (glucoseValue < 0.6) {
-  setAlertType('error');
-  setAlertMessage('⚠️ Hypoglycémie sévère ! Consommez du sucre rapide immédiatement.');
-  setShowAlert(true);
-  setTimeout(() => setShowAlert(false), 5000);
-} else if (glucoseValue < 0.7) {
-  setAlertType('warning');
-  setAlertMessage('⚠️ Glycémie basse. Surveillez votre état.');
-  setShowAlert(true);
-  setTimeout(() => setShowAlert(false), 4000);
-} else if (glucoseValue > 2.5) {
-  setAlertType('error');
-  setAlertMessage('⚠️ Hyperglycémie sévère ! Consultez un médecin.');
-  setShowAlert(true);
-  setTimeout(() => setShowAlert(false), 5000);
-} else if (glucoseValue > 1.8) {
-  setAlertType('warning');
-  setAlertMessage('⚠️ Glycémie élevée. Hydratez-vous.');
-  setShowAlert(true);
-  setTimeout(() => setShowAlert(false), 4000);
-} else {
-  setAlertType('success');
-  setAlertMessage('✅ Glycémie dans la norme !');
-  setShowAlert(true);
-  setTimeout(() => setShowAlert(false), 3000);
-}
-
-const newEntry = {
-  id: Date.now(),
-  moment: formData.moment,
-  glucose: glucoseValue,
-  measureTime: formData.measureTime,
-  meal: formData.meal,
-  mealContent: formData.mealContent,
-  mealTime: formData.mealTime,
-  medications: formData.medications.filter(m => m.name),
-  comment: formData.comment,
-  timestamp: new Date().toISOString()
-};
-
-const updated = [...entries, newEntry];
-setEntries(updated);
-
-const today = new Date().toISOString().split('T')[0];
-await window.storage.set(`entries:${currentUser.id}:${today}`, JSON.stringify(updated));
-
-const updatedAll = { ...allEntries, [today]: updated };
-setAllEntries(updatedAll);
-
-formData.medications.forEach(med => {
-  if (med.name && !recentMeds.includes(med.name)) {
-    const updatedMeds = [med.name, ...recentMeds].slice(0, 5);
-    setRecentMeds(updatedMeds);
-    window.storage.set(`recent_meds:${currentUser.id}`, JSON.stringify(updatedMeds));
-  }
-});
-
-if (formData.meal) {
-  const updatedMeals = [formData.meal, ...recentMeals.filter(m => m !== formData.meal)].slice(0, 5);
-  setRecentMeals(updatedMeals);
-  await window.storage.set(`recent_meals:${currentUser.id}`, JSON.stringify(updatedMeals));
-}
-
-updateStreak();
-checkBadges(updated.length);
-
-// Réinitialiser le formulaire AVANT de fermer
-setFormData({
-  moment: 'matin_jeun',
-  glucose: '',
-  measureTime: '',
-  meal: '',
-  mealContent: '',
-  mealTime: '',
-  medications: [],
-  comment: ''
-});
-
-setShowAddForm(false);
-```
-
-};
-
-const updateStreak = async () => {
-const newStreak = streak + 1;
-setStreak(newStreak);
-await window.storage.set(`streak:${currentUser.id}`, newStreak.toString());
-};
-
-const checkBadges = async (totalEntries) => {
-const newBadges = […badges];
-
-```
-if (totalEntries >= 1 && !badges.includes('first')) {
-  newBadges.push('first');
-}
-if (streak >= 7 && !badges.includes('week')) {
-  newBadges.push('week');
-}
-if (totalEntries >= 50 && !badges.includes('fifty')) {
-  newBadges.push('fifty');
-}
-
-if (newBadges.length > badges.length) {
-  setBadges(newBadges);
-  await window.storage.set(`badges:${currentUser.id}`, JSON.stringify(newBadges));
-}
-```
-
-};
-
-const deleteEntry = async (id) => {
-const updated = entries.filter(e => e.id !== id);
-setEntries(updated);
-const today = new Date().toISOString().split(‘T’)[0];
-await window.storage.set(`entries:${currentUser.id}:${today}`, JSON.stringify(updated));
-
-```
-const updatedAll = { ...allEntries, [today]: updated };
-setAllEntries(updatedAll);
-```
-
-};
-
-const resetForm = () => {
-setFormData({
-moment: ‘matin_jeun’,
-glucose: ‘’,
-measureTime: ‘’,
-meal: ‘’,
-mealContent: ‘’,
-mealTime: ‘’,
-medications: [],
-comment: ‘’
-});
-};
-
-const getChartData = () => {
-const days = chartPeriod === ‘1j’ ? 1 : chartPeriod === ‘3j’ ? 3 : chartPeriod === ‘7j’ ? 7 : chartPeriod === ‘15j’ ? 15 : 30;
-const result = [];
-const now = new Date();
-
-```
-for (let i = days - 1; i >= 0; i--) {
-  const date = new Date();
-  date.setDate(now.getDate() - i);
-  const dateStr = date.toISOString().split('T')[0];
-  
-  if (allEntries[dateStr] && allEntries[dateStr].length > 0) {
-    allEntries[dateStr].forEach(entry => {
-      result.push({
-        date: dateStr,
-        time: entry.measureTime,
-        glucose: parseFloat(entry.glucose),
-        dateTime: `${dateStr} ${entry.measureTime}`,
-        label: entry.measureTime
-      });
-    });
-  }
-}
-
-return result.sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime));
-```
-
-};
-
-const getAverageGlucose = () => {
-const data = getChartData();
-if (data.length === 0) return 0;
-return (data.reduce((sum, d) => sum + d.glucose, 0) / data.length).toFixed(1);
-};
-
-const getGlucoseRange = () => {
-const data = getChartData();
-if (data.length === 0) return { min: 0, max: 0 };
-const values = data.map(d => d.glucose);
-return {
-min: Math.min(…values).toFixed(1),
-max: Math.max(…values).toFixed(1)
-};
-};
-
-const getTimeInRange = () => {
-const data = getChartData();
-if (data.length === 0) return 0;
-const inRange = data.filter(d => d.glucose >= goals.min && d.glucose <= goals.max).length;
-return ((inRange / data.length) * 100).toFixed(0);
-};
-
-const getDailyProgress = () => {
-return Math.min((entries.length / goals.dailyMeasures) * 100, 100).toFixed(0);
-};
-
-const exportToExcel = async (period) => {
-const days = period === ‘24h’ ? 1 : period === ‘3j’ ? 3 : period === ‘7j’ ? 7 : 14;
-const data = [];
-const now = new Date();
-
-```
-for (let i = 0; i < days; i++) {
-  const date = new Date();
-  date.setDate(now.getDate() - i);
-  const dateStr = date.toISOString().split('T')[0];
-  
-  if (allEntries[dateStr]) {
-    allEntries[dateStr].forEach(entry => {
-      data.push({
-        date: dateStr,
-        ...entry
-      });
-    });
-  }
-}
-
-try {
-  const XLSX = await import('https://cdn.sheetjs.com/xlsx-0.20.1/package/xlsx.mjs');
-  
-  const worksheetData = data.map(entry => ({
-    'Date': entry.date,
-    'Moment': moments.find(m => m.id === entry.moment)?.label || entry.moment,
-    'Heure mesure': entry.measureTime,
-    'Glycémie (g/L)': entry.glucose,
-    'Repas': entry.meal || '-',
-    'Contenu repas': entry.mealContent || '-',
-    'Heure repas': entry.mealTime || '-',
-    'Médicaments': entry.medications?.map(m => `${m.name} (${m.dose}) à ${m.time}`).join('; ') || '-',
-    'Commentaire': entry.comment || '-'
-  }));
-
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.json_to_sheet(worksheetData);
-  
-  ws['!cols'] = [
-    { wch: 12 },
-    { wch: 18 },
-    { wch: 12 },
-    { wch: 15 },
-    { wch: 20 },
-    { wch: 30 },
-    { wch: 12 },
-    { wch: 40 },
-    { wch: 30 }
-  ];
-  
-  XLSX.utils.book_append_sheet(wb, ws, period);
-  
-  const periodLabel = period === '24h' ? '24h' : period === '3j' ? '3jours' : period === '7j' ? '7jours' : '14jours';
-  XLSX.writeFile(wb, `GlucoTrack_${currentUser.name}_${periodLabel}_${new Date().toISOString().split('T')[0]}.xlsx`);
-  
-  setShowExportMenu(false);
-  
-  setAlertType('success');
-  setAlertMessage('✅ Fichier Excel téléchargé !');
-  setShowAlert(true);
-  setTimeout(() => setShowAlert(false), 3000);
-} catch (error) {
-  console.error('Export error:', error);
-  setAlertType('error');
-  setAlertMessage('❌ Erreur lors de l\'export');
-  setShowAlert(true);
-  setTimeout(() => setShowAlert(false), 3000);
-}
-```
-
-};
-
-const shareData = (period) => {
-const days = period === ‘24h’ ? 1 : period === ‘3j’ ? 3 : period === ‘7j’ ? 7 : 14;
-const data = [];
-const now = new Date();
-
-```
-for (let i = 0; i < days; i++) {
-  const date = new Date();
-  date.setDate(now.getDate() - i);
-  const dateStr = date.toISOString().split('T')[0];
-  
-  if (allEntries[dateStr]) {
-    allEntries[dateStr].forEach(entry => {
-      data.push({ date: dateStr, ...entry });
-    });
-  }
-}
-
-const shareText = `📊 Suivi GlucoTrack - ${currentUser.name} (${period})
-```
-
-Total entrées: ${data.length}
-Moyenne glycémie: ${getAverageGlucose()} g/L
-
-Détails:
-${data.slice(0, 10).map(e =>
-`${e.date} ${e.measureTime} - ${e.glucose} g/L (${moments.find(m => m.id === e.moment)?.label})`
-).join(’\n’)}
-${data.length > 10 ? `\n... et ${data.length - 10} autres entrées` : ‘’}`;
-
-```
-if (navigator.share) {
-  navigator.share({
-    title: 'Mon suivi GlucoTrack',
-    text: shareText
-  });
-} else {
-  navigator.clipboard.writeText(shareText);
-  alert('Données copiées dans le presse-papier !');
-}
-
-setShowExportMenu(false);
-```
-
-};
-
-const tutorialSteps = [
-{
-title: “Bienvenue sur GlucoTrack ! 👋”,
-description: “Votre compagnon intelligent pour le suivi du diabète. Laissez-moi vous guider rapidement.”,
-action: “Commencer”
-},
-{
-title: “Choisissez le moment 🕐”,
-description: “Matin à jeun, Midi, Soir ou Autre. Chaque moment peut avoir plusieurs médicaments et un repas détaillé.”,
-action: “Compris”
-},
-{
-title: “Ajoutez vos médicaments 💊”,
-description: “Cliquez sur + pour ajouter autant de médicaments que nécessaire avec l’heure et la dose.”,
-action: “Super”
-},
-{
-title: “Visualisez vos données 📈”,
-description: “La courbe montre l’évolution de votre glycémie avec zones hypo/normal/hyper.”,
-action: “Continuer”
-},
-{
-title: “Exportez en Excel 📥”,
-description: “Téléchargement → Export Excel pour générer un rapport complet pour votre médecin !”,
-action: “Parfait”
-},
-{
-title: “C’est parti ! 🚀”,
-description: “Vous êtes prêt ! Un suivi régulier débloque des badges. Bonne santé !”,
-action: “Terminer”
-}
-];
-
-const nextTutorialStep = async () => {
-if (tutorialStep < tutorialSteps.length - 1) {
-setTutorialStep(tutorialStep + 1);
-} else {
-setShowTutorial(false);
-await window.storage.set(`tutorial_done:${currentUser.id}`, ‘true’);
-}
-};
-
-const skipTutorial = async () => {
-setShowTutorial(false);
-await window.storage.set(`tutorial_done:${currentUser.id}`, ‘true’);
-};
-
-const toggleDarkMode = async () => {
-const newMode = !darkMode;
-setDarkMode(newMode);
-await window.storage.set(`dark_mode:${currentUser.id}`, newMode.toString());
-};
-
-const filteredEntries = entries.filter(entry => {
-if (!searchQuery) return true;
-const query = searchQuery.toLowerCase();
-return (
-entry.glucose.toString().includes(query) ||
-entry.measureTime.includes(query) ||
-entry.meal?.toLowerCase().includes(query) ||
-entry.mealContent?.toLowerCase().includes(query) ||
-entry.comment?.toLowerCase().includes(query) ||
-entry.medications?.some(m => m.name.toLowerCase().includes(query)) ||
-moments.find(m => m.id === entry.moment)?.label.toLowerCase().includes(query)
-);
-});
-
-const getHeatMapData = () => {
-const heatMap = {};
-const days = [‘Dim’, ‘Lun’, ‘Mar’, ‘Mer’, ‘Jeu’, ‘Ven’, ‘Sam’];
-const hours = Array.from({ length: 24 }, (_, i) => i);
-
-```
-days.forEach(day => {
-  heatMap[day] = {};
-  hours.forEach(hour => {
-    heatMap[day][hour] = { count: 0, total: 0, avg: 0 };
-  });
-});
-
-Object.values(allEntries).forEach(dayEntries => {
-  dayEntries.forEach(entry => {
-    const date = new Date(entry.timestamp);
-    const dayName = days[date.getDay()];
-    const hour = parseInt(entry.measureTime.split(':')[0]);
-    
-    if (heatMap[dayName] && heatMap[dayName][hour]) {
-      heatMap[dayName][hour].count++;
-      heatMap[dayName][hour].total += entry.glucose;
-      heatMap[dayName][hour].avg = heatMap[dayName][hour].total / heatMap[dayName][hour].count;
-    }
-  });
-});
-
-return heatMap;
-```
-
-};
-
-const getHeatMapColor = (avg) => {
-if (avg === 0) return ‘bg-gray-800’;
-if (avg < 0.7) return ‘bg-red-500’;
-if (avg >= 0.7 && avg <= 1.4) return ‘bg-green-500’;
-if (avg > 1.4 && avg <= 1.8) return ‘bg-yellow-500’;
-return ‘bg-orange-500’;
-};
-
-const BadgeCard = ({ type, unlocked }) => {
-const badgeInfo = {
-first: { icon: ‘🎯’, name: ‘Première entrée’, desc: ‘Commencer le suivi’ },
-week: { icon: ‘🔥’, name: ‘Série de 7 jours’, desc: ‘Une semaine’ },
-fifty: { icon: ‘⭐’, name: ‘50 entrées’, desc: ‘Expert’ }
-};
-
-```
-const badge = badgeInfo[type];
-return (
-  <div className={`p-4 rounded-xl text-center transition-all ${unlocked ? 'bg-gradient-to-br from-blue-500 to-cyan-500' : 'bg-gray-700 opacity-40'}`}>
-    <div className="text-3xl mb-2">{badge.icon}</div>
-    <div className="font-semibold text-sm">{badge.name}</div>
-    <div className="text-xs opacity-80">{badge.desc}</div>
-  </div>
-);
-```
-
-};
-
-if (loading) {
-return (
-<div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
-<div className="text-white text-xl">Chargement…</div>
-</div>
-);
-}
-
-if (showUserSelect) {
-return (
-<div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-cyan-900 flex items-center justify-center p-4">
-<div className="bg-white/10 backdrop-blur-xl rounded-3xl p-8 max-w-md w-full border border-white/20">
-<div className="text-center mb-8">
-<h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent mb-2">
-GlucoTrack
-</h1>
-<p className="text-gray-400">Sélectionner ou créer un profil</p>
-</div>
-
-```
-      {users.length > 0 && (
-        <div className="space-y-3 mb-6">
-          {users.map(user => (
-            <button
-              key={user.id}
-              onClick={() => selectUser(user)}
-              className="w-full bg-white/10 hover:bg-white/20 rounded-xl p-4 flex items-center gap-4 transition border border-white/10 hover:border-blue-500/50"
-            >
-              <div className="text-4xl">{user.avatar}</div>
-              <div className="text-left">
-                <div className="font-semibold text-white">{user.name}</div>
-                <div className="text-sm text-gray-400">Continuer</div>
-              </div>
-            </button>
-          ))}
-        </div>
-      )}
-
-      <div className="border-t border-white/20 pt-6">
-        <p className="text-sm text-gray-400 mb-3">Nouveau profil</p>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={newUserName}
-            onChange={(e) => setNewUserName(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && createUser()}
-            placeholder="Nom"
-            className="flex-1 bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-gray-400"
-          />
-          <button
-            onClick={createUser}
-            disabled={!newUserName.trim()}
-            className="bg-gradient-to-r from-blue-500 to-cyan-500 px-6 rounded-lg font-semibold disabled:opacity-50 hover:shadow-lg transition"
-          >
-            <Plus size={20} />
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-);
-```
-
-}
-
-return (
-<div className={`min-h-screen ${darkMode ? 'bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900' : 'bg-gradient-to-br from-blue-50 via-cyan-50 to-blue-100'} ${darkMode ? 'text-white' : 'text-gray-900'} transition-colors duration-300`}>
-{showTutorial && (
-<div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-<div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-3xl p-8 max-w-md w-full border-2 border-blue-500/50 shadow-2xl">
-<div className="text-center mb-6">
-<div className="text-6xl mb-4">
-{tutorialStep === 0 && “👋”}
-{tutorialStep === 1 && “🕐”}
-{tutorialStep === 2 && “💊”}
-{tutorialStep === 3 && “📈”}
-{tutorialStep === 4 && “📥”}
-{tutorialStep === 5 && “🚀”}
-</div>
-<h2 className="text-2xl font-bold mb-3 bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-{tutorialSteps[tutorialStep].title}
-</h2>
-<p className="text-gray-300 leading-relaxed">
-{tutorialSteps[tutorialStep].description}
-</p>
-</div>
-
-```
-        <div className="flex gap-2 mb-4">
-          {tutorialSteps.map((_, i) => (
-            <div 
-              key={i} 
-              className={`flex-1 h-1.5 rounded-full transition-all ${i <= tutorialStep ? 'bg-gradient-to-r from-blue-500 to-cyan-500' : 'bg-white/20'}`}
-            />
-          ))}
-        </div>
-
-        <div className="flex gap-3">
-          {tutorialStep > 0 && (
-            <button
-              onClick={skipTutorial}
-              className="flex-1 py-3 bg-white/10 hover:bg-white/20 rounded-xl font-semibold transition"
-            >
-              Passer
-            </button>
-          )}
-          <button
-            onClick={nextTutorialStep}
-            className="flex-1 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl font-semibold hover:shadow-lg transition flex items-center justify-center gap-2"
-          >
-            {tutorialSteps[tutorialStep].action}
-            <ChevronRight size={20} />
-          </button>
-        </div>
-      </div>
-    </div>
-  )}
-
-  {showAlert && (
-    <div className={`fixed top-20 left-1/2 transform -translate-x-1/2 z-50 animate-bounce ${
-      alertType === 'error' ? 'bg-red-500' : alertType === 'warning' ? 'bg-orange-500' : 'bg-green-500'
-    } text-white px-6 py-4 rounded-xl shadow-2xl max-w-md`}>
-      <div className="font-semibold">{alertMessage}</div>
-    </div>
-  )}
-  
-  <div className={`${darkMode ? 'bg-black/20' : 'bg-white/80'} backdrop-blur-xl border-b ${darkMode ? 'border-white/10' : 'border-gray-200'} sticky top-0 z-40 transition-colors`}>
-    <div className="max-w-4xl mx-auto px-4 py-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="text-3xl">{currentUser?.avatar}</div>
-          <div>
-            <h1 className={`text-xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent`}>
-              {currentUser?.name}
-            </h1>
-            <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>GlucoTrack</p>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <button 
-            onClick={toggleDarkMode}
-            className={`p-2 rounded-lg ${darkMode ? 'bg-white/10 hover:bg-white/20' : 'bg-gray-200 hover:bg-gray-300'} transition`}
-            title={darkMode ? "Mode clair" : "Mode sombre"}
-          >
-            {darkMode ? '☀️' : '🌙'}
-          </button>
-          <button 
-            onClick={() => setShowTutorial(true)}
-            className={`p-2 rounded-lg ${darkMode ? 'bg-white/10 hover:bg-white/20' : 'bg-gray-200 hover:bg-gray-300'} transition`}
-            title="Aide"
-          >
-            <HelpCircle size={20} />
-          </button>
-          <button 
-            onClick={() => setShowExportMenu(!showExportMenu)}
-            className={`p-2 rounded-lg ${darkMode ? 'bg-white/10 hover:bg-white/20' : 'bg-gray-200 hover:bg-gray-300'} transition`}
-            title="Export"
-          >
-            <Download size={20} />
-          </button>
-          <button 
-            onClick={() => {
-              setCurrentUser(null);
-              setShowUserSelect(true);
-            }}
-            className={`p-2 rounded-lg ${darkMode ? 'bg-white/10 hover:bg-white/20' : 'bg-gray-200 hover:bg-gray-300'} transition`}
-            title="Changer d'utilisateur"
-          >
-            <LogOut size={20} />
-          </button>
-        </div>
-      </div>
-
-      {showExportMenu && (
-        <div className={`absolute right-4 mt-2 ${darkMode ? 'bg-black/90' : 'bg-white'} backdrop-blur-xl rounded-xl border ${darkMode ? 'border-white/20' : 'border-gray-200'} overflow-hidden z-50 w-56 shadow-2xl`}>
-          <div className={`p-3 border-b ${darkMode ? 'border-white/10' : 'border-gray-200'}`}>
-            <div className="text-sm font-semibold">📥 Export Excel</div>
-            <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'} mt-1`}>Format .xlsx compatible</div>
-          </div>
-          {['24h', '3j', '7j', '14j'].map(period => (
-            <button
-              key={period}
-              onClick={() => exportToExcel(period)}
-              className={`w-full px-4 py-3 ${darkMode ? 'hover:bg-white/10' : 'hover:bg-gray-100'} flex items-center justify-between transition text-left group`}
-            >
-              <div className="flex items-center gap-3">
-                <Download size={16} className="group-hover:text-green-400 transition" />
-                <span>Dernières {period}</span>
-              </div>
-              <ChevronRight size={14} className="opacity-50" />
-            </button>
-          ))}
-          <div className={`p-3 border-t ${darkMode ? 'border-white/10' : 'border-gray-200'}`}>
-            <div className="text-sm font-semibold">📤 Partager</div>
-            <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'} mt-1`}>Texte simple</div>
-          </div>
-          {['24h', '3j', '7j', '14j'].map(period => (
-            <button
-              key={`share-${period}`}
-              onClick={() => shareData(period)}
-              className={`w-full px-4 py-3 ${darkMode ? 'hover:bg-white/10' : 'hover:bg-gray-100'} flex items-center justify-between transition text-left group`}
-            >
-              <div className="flex items-center gap-3">
-                <Share2 size={16} className="group-hover:text-blue-400 transition" />
-                <span>Dernières {period}</span>
-              </div>
-              <ChevronRight size={14} className="opacity-50" />
-            </button>
-          ))}
-        </div>
-      )}
-      
-      <div className="mt-4 grid grid-cols-4 gap-3">
-        <div className={`${darkMode ? 'bg-white/10' : 'bg-white'} backdrop-blur rounded-lg p-3 shadow-sm`}>
-          <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Série</div>
-          <div className="text-2xl font-bold text-blue-400">{streak}j 🔥</div>
-        </div>
-        <div className={`${darkMode ? 'bg-white/10' : 'bg-white'} backdrop-blur rounded-lg p-3 shadow-sm`}>
-          <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Aujourd'hui</div>
-          <div className="text-2xl font-bold text-cyan-400">{entries.length}</div>
-        </div>
-        <div className={`${darkMode ? 'bg-white/10' : 'bg-white'} backdrop-blur rounded-lg p-3 shadow-sm`}>
-          <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Moyenne</div>
-          <div className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{getAverageGlucose()}</div>
-        </div>
-        <div className={`${darkMode ? 'bg-white/10' : 'bg-white'} backdrop-blur rounded-lg p-3 shadow-sm`}>
-          <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Objectif</div>
-          <div className="text-2xl font-bold text-blue-300">{getDailyProgress()}%</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div className="max-w-4xl mx-auto px-4 mt-4">
-    <div className={`flex gap-2 ${darkMode ? 'bg-black/20' : 'bg-white/80'} backdrop-blur rounded-xl p-1 overflow-x-auto`}>
-      {[
-        { id: 'today', icon: Calendar, label: "Aujourd'hui" },
-        { id: 'chart', icon: Activity, label: 'Courbe' },
-        { id: 'stats', icon: TrendingUp, label: 'Stats' },
-        { id: 'badges', icon: Award, label: 'Badges' }
-      ].map(tab => (
-        <button
-          key={tab.id}
-          onClick={() => setActiveTab(tab.id)}
-          className={`flex-1 flex items-center justify-center gap-1 py-3 rounded-lg transition-all ${
-            activeTab === tab.id ? 'bg-gradient-to-r from-blue-500 to-cyan-500' : 'hover:bg-white/5'
-          }`}
-        >
-          <tab.icon size={16} />
-          <span className="font-medium text-xs">{tab.label}</span>
-        </button>
-      ))}
-    </div>
-  </div>
-
-  <div className="max-w-4xl mx-auto px-4 py-6 pb-20">
-    {activeTab === 'today' && (
-      <div className="space-y-4">
-        {/* Barre de recherche */}
-        <div className={`${darkMode ? 'bg-white/10' : 'bg-white'} backdrop-blur-xl rounded-xl p-4 border ${darkMode ? 'border-white/20' : 'border-gray-200'}`}>
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="🔍 Rechercher (glycémie, médicament, repas...)"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className={`w-full ${darkMode ? 'bg-white/10 border-white/20 text-white placeholder-gray-400' : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-500'} border rounded-lg px-4 py-3 pr-10`}
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-200"
-              >
-                <X size={18} />
-              </button>
-            )}
-          </div>
-          {searchQuery && (
-            <div className={`mt-2 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              {filteredEntries.length} résultat(s) trouvé(s)
-            </div>
-          )}
-        </div>
-
-        {!showAddForm && (
-          <button
-            onClick={() => setShowAddForm(true)}
-            className="w-full py-4 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl font-semibold flex items-center justify-center gap-2 hover:shadow-lg hover:scale-105 transition-all"
-          >
-            <Plus size={20} />
-            Nouvelle mesure
-          </button>
-        )}
-
-        {showAddForm && (
-          <div className="bg-gradient-to-br from-slate-800/50 to-blue-900/30 backdrop-blur-xl rounded-2xl p-6 border border-blue-500/30 shadow-2xl">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">Nouvelle mesure</h3>
-              <button onClick={() => setShowAddForm(false)} className="p-2 hover:bg-white/10 rounded-lg transition">
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="space-y-6">
-              {/* Moment de la journée */}
-              <div>
-                <label className="text-sm font-semibold text-blue-300 mb-3 block">📅 Moment de la journée</label>
-                <div className="grid grid-cols-2 gap-3">
-                  {moments.map(moment => (
-                    <button
-                      key={moment.id}
-                      onClick={() => setFormData({...formData, moment: moment.id})}
-                      className={`p-4 rounded-xl border-2 transition-all ${
-                        formData.moment === moment.id 
-                          ? 'bg-blue-500/30 border-blue-400 shadow-lg' 
-                          : 'bg-white/5 border-white/10 hover:border-blue-400/50'
-                      }`}
-                    >
-                      <div className="text-2xl mb-1">{moment.icon}</div>
-                      <div className="text-sm font-medium">{moment.label.split(' ')[1]}</div>
-                    </button>
-                  ))}
-                </div>
-                {formData.moment === 'autre' && (
-                  <input
-                    type="text"
-                    placeholder="Précisez le moment..."
-                    className="mt-3 w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-gray-400"
-                  />
-                )}
-              </div>
-
-              {/* Glycémie */}
-              <div className="bg-gradient-to-r from-blue-500/20 to-cyan-500/20 rounded-xl p-5 border border-blue-400/30">
-                <label className="text-sm font-semibold text-blue-300 mb-3 block">🩸 Glycémie (obligatoire)</label>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-2 block font-medium`}>Valeur (g/L)</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={formData.glucose}
-                      onChange={(e) => setFormData({...formData, glucose: e.target.value})}
-                      placeholder="1.20"
-                      className="w-full bg-white/10 border border-white/30 rounded-lg px-4 py-3 text-white text-2xl font-bold placeholder-gray-400 text-center"
-                    />
-                  </div>
-                  <div>
-                    <label className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-2 block font-medium`}>⏰ Heure de mesure</label>
-                    <input
-                      type="time"
-                      value={formData.measureTime}
-                      onChange={(e) => setFormData({...formData, measureTime: e.target.value})}
-                      className="w-full bg-white/10 border border-white/30 rounded-lg px-4 py-3 text-white text-xl text-center"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Médicaments */}
-              <div>
-                <div className="flex justify-between items-center mb-3">
-                  <label className="text-sm font-semibold text-blue-300 flex items-center gap-2">
-                    <Pill size={16} />
-                    Médicaments
-                  </label>
-                  <button
-                    onClick={addMedication}
-                    className="px-3 py-1 bg-blue-500/30 hover:bg-blue-500/50 rounded-lg text-sm flex items-center gap-1 transition"
-                  >
-                    <Plus size={16} />
-                    Ajouter
-                  </button>
-                </div>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GlucoTrack Pro</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/recharts/umd/Recharts.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .glass { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .glass-dark { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+        const { 
+            LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, 
+            ResponsiveContainer, ReferenceLine, AreaChart, Area 
+        } = Recharts;
+
+        // --- COMPOSANTS ICONES ---
+        const Icon = ({ name, size = 20, className = "" }) => {
+            useEffect(() => { lucide.createIcons(); }, [name]);
+            return <i data-lucide={name} style={{width: size, height: size}} className={className}></i>;
+        };
+
+        const GlucoTrack = () => {
+            // État Global
+            const [activeTab, setActiveTab] = useState('today');
+            const [entries, setEntries] = useState([]);
+            const [allEntries, setAllEntries] = useState({});
+            const [showAddForm, setShowAddForm] = useState(false);
+            const [showUserSelect, setShowUserSelect] = useState(true);
+            const [currentUser, setCurrentUser] = useState(null);
+            const [users, setUsers] = useState([]);
+            const [newUserName, setNewUserName] = useState('');
+            const [darkMode, setDarkMode] = useState(true);
+            const [loading, setLoading] = useState(true);
+            const [badges, setBadges] = useState([]);
+            
+            // État Formulaire
+            const [formData, setFormData] = useState({
+                moment: 'matin_jeun',
+                glucose: '',
+                measureTime: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                meal: 'none',
+                mealContent: '',
+                medications: [],
+                comment: ''
+            });
+
+            // Initialisation & Chargement
+            useEffect(() => {
+                const savedUsers = localStorage.getItem('gt_users');
+                if (savedUsers) setUsers(JSON.parse(savedUsers));
+                setLoading(false);
+            }, []);
+
+            useEffect(() => {
+                if (currentUser) {
+                    const savedData = localStorage.getItem(`gt_data_${currentUser.id}`);
+                    if (savedData) {
+                        const parsed = JSON.parse(savedData);
+                        setAllEntries(parsed.allEntries || {});
+                        const today = new Date().toISOString().split('T')[0];
+                        setEntries(parsed.allEntries?.[today] || []);
+                        setBadges(parsed.badges || []);
+                    }
+                }
+            }, [currentUser]);
+
+            // Sauvegarde automatique
+            const persistData = (updatedAllEntries, updatedBadges) => {
+                const dataToSave = { allEntries: updatedAllEntries, badges: updatedBadges };
+                localStorage.setItem(`gt_data_${currentUser.id}`, JSON.stringify(dataToSave));
+            };
+
+            // Logique Utilisateurs
+            const handleCreateUser = () => {
+                if (!newUserName.trim()) return;
+                const newUser = { id: Date.now().toString(), name: newUserName, avatar: '👤' };
+                const updated = [...users, newUser];
+                setUsers(updated);
+                localStorage.setItem('gt_users', JSON.stringify(updated));
+                setCurrentUser(newUser);
+                setShowUserSelect(false);
+            };
+
+            // Ajout de mesure
+            const saveEntry = () => {
+                if (!formData.glucose) return;
+                const today = new Date().toISOString().split('T')[0];
+                const newEntry = {
+                    ...formData,
+                    id: Date.now(),
+                    glucose: parseFloat(formData.glucose),
+                    timestamp: new Date().toISOString()
+                };
+
+                const updatedDayEntries = [...entries, newEntry];
+                const updatedAll = { ...allEntries, [today]: updatedDayEntries };
                 
-                {formData.medications.length === 0 ? (
-                  <div className="text-center py-6 text-gray-400 bg-white/5 rounded-lg border border-dashed border-white/20">
-                    <Pill size={32} className="mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">Aucun médicament</p>
-                    <p className="text-xs">Cliquez sur "Ajouter" pour en ajouter</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {formData.medications.map((med, index) => (
-                      <div key={index} className="bg-white/10 rounded-lg p-4 border border-white/20">
-                        <div className="flex justify-between items-start mb-3">
-                          <div className="text-sm font-semibold text-blue-300">Médicament {index + 1}</div>
-                          <button
-                            onClick={() => removeMedication(index)}
-                            className="p-1 hover:bg-red-500/20 rounded transition"
-                          >
-                            <Trash2 size={16} className="text-red-400" />
-                          </button>
+                setEntries(updatedDayEntries);
+                setAllEntries(updatedAll);
+                
+                // Vérification Badges
+                let newBadges = [...badges];
+                if (updatedDayEntries.length === 1 && !newBadges.includes('first')) {
+                    newBadges.push('first');
+                }
+                setBadges(newBadges);
+
+                persistData(updatedAll, newBadges);
+                setShowAddForm(false);
+                setFormData({ ...formData, glucose: '', comment: '' });
+            };
+
+            // Export Excel
+            const exportData = () => {
+                const flatData = Object.keys(allEntries).flatMap(date => 
+                    allEntries[date].map(e => ({
+                        Date: date, Heure: e.measureTime, Glycemie: e.glucose, Moment: e.moment, Repas: e.mealContent, Notes: e.comment
+                    }))
+                );
+                const ws = XLSX.utils.json_to_sheet(flatData);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Glycémie");
+                XLSX.writeFile(wb, `GlucoTrack_${currentUser.name}.xlsx`);
+            };
+
+            if (loading) return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">Chargement...</div>;
+
+            if (showUserSelect) {
+                return (
+                    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6 text-white">
+                        <div className="w-full max-w-md space-y-8">
+                            <div className="text-center">
+                                <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">GlucoTrack</h1>
+                                <p className="text-slate-400 mt-2">Votre compagnon santé</p>
+                            </div>
+                            <div className="space-y-4">
+                                {users.map(u => (
+                                    <button key={u.id} onClick={() => {setCurrentUser(u); setShowUserSelect(false)}} 
+                                            className="w-full glass p-5 rounded-2xl flex items-center gap-4 hover:bg-white/20 transition-all">
+                                        <span className="text-3xl">{u.avatar}</span>
+                                        <span className="text-lg font-bold">{u.name}</span>
+                                        <Icon name="chevron-right" className="ml-auto text-slate-500" />
+                                    </button>
+                                ))}
+                            </div>
+                            <div className="pt-6 border-t border-white/10">
+                                <div className="flex gap-2">
+                                    <input value={newUserName} onChange={e => setNewUserName(e.target.value)}
+                                           className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-blue-500" 
+                                           placeholder="Nom du nouveau profil" />
+                                    <button onClick={handleCreateUser} className="bg-blue-600 px-6 rounded-xl font-bold transition-transform active:scale-95">+</button>
+                                </div>
+                            </div>
                         </div>
-                        <div className="space-y-2">
-                          {recentMeds.length > 0 && !med.name && (
-                            <div className="flex flex-wrap gap-2 mb-2">
-                              {recentMeds.map(m => (
-                                <button
-                                  key={m}
-                                  onClick={() => updateMedication(index, 'name', m)}
-                                  className="px-2 py-1 bg-blue-500/20 hover:bg-blue-500/40 rounded text-xs transition"
-                                >
-                                  {m}
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                          <input
-                            type="text"
-                            placeholder="Nom du médicament"
-                            value={med.name}
-                            onChange={(e) => updateMedication(index, 'name', e.target.value)}
-                            className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-gray-400 text-sm"
-                          />
-                          <div className="grid grid-cols-2 gap-3">
-                            <div>
-                              <label className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-1 block font-medium`}>Dose</label>
-                              <input
-                                type="text"
-                                placeholder="10 unités"
-                                value={med.dose}
-                                onChange={(e) => updateMedication(index, 'dose', e.target.value)}
-                                className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-gray-400 text-sm"
-                              />
-                            </div>
-                            <div>
-                              <label className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-1 block font-medium`}>⏰ Heure prise</label>
-                              <input
-                                type="time"
-                                value={med.time}
-                                onChange={(e) => updateMedication(index, 'time', e.target.value)}
-                                className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm text-center"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Repas */}
-              <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                <label className="text-sm font-semibold text-blue-300 mb-3 block flex items-center gap-2">
-                  <Utensils size={16} />
-                  Repas (optionnel)
-                </label>
-                {recentMeals.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    {recentMeals.map(meal => (
-                      <button
-                        key={meal}
-                        onClick={() => setFormData({...formData, meal: meal})}
-                        className={`px-3 py-1 rounded-lg text-xs transition ${formData.meal === meal ? 'bg-cyan-500' : 'bg-white/10 hover:bg-white/20'}`}
-                      >
-                        {meal}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                <input
-                  type="text"
-                  placeholder="Type de repas (ex: Petit-déjeuner)"
-                  value={formData.meal}
-                  onChange={(e) => setFormData({...formData, meal: e.target.value})}
-                  className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-gray-400 mb-2"
-                />
-                <textarea
-                  placeholder="Contenu du repas (ex: Pain, confiture, café)"
-                  value={formData.mealContent}
-                  onChange={(e) => setFormData({...formData, mealContent: e.target.value})}
-                  className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-gray-400 h-20 resize-none mb-3"
-                />
-                <div>
-                  <label className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-2 block font-medium`}>⏰ Heure du repas</label>
-                  <input
-                    type="time"
-                    value={formData.mealTime}
-                    onChange={(e) => setFormData({...formData, mealTime: e.target.value})}
-                    className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white text-center"
-                  />
-                </div>
-              </div>
-
-              {/* Commentaire */}
-              <div>
-                <label className="text-sm font-semibold text-blue-300 mb-2 block">💬 Commentaire</label>
-                <textarea
-                  placeholder="Notes, ressenti, observations..."
-                  value={formData.comment}
-                  onChange={(e) => setFormData({...formData, comment: e.target.value})}
-                  className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-gray-400 h-24 resize-none"
-                />
-              </div>
-
-              {/* Bouton d'enregistrement */}
-              <button
-                onClick={saveEntry}
-                disabled={!formData.glucose || !formData.measureTime}
-                className="w-full py-4 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl font-bold text-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-2xl transition-all disabled:hover:scale-100 hover:scale-105"
-              >
-                <Check size={24} />
-                Enregistrer la mesure
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Liste des entrées */}
-        <div className="space-y-3">
-          {filteredEntries.length === 0 && !showAddForm && (
-            <div className={`text-center py-12 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              <Activity size={48} className="mx-auto mb-4 opacity-50" />
-              <p>{searchQuery ? 'Aucun résultat' : 'Aucune mesure aujourd\'hui'}</p>
-              <p className="text-sm">{searchQuery ? 'Essayez un autre terme' : 'Commencez votre suivi'}</p>
-            </div>
-          )}
-          
-          {filteredEntries.map(entry => (
-            <div key={entry.id} className="bg-gradient-to-r from-slate-800/50 to-blue-900/30 backdrop-blur rounded-xl p-4 border border-blue-500/20 hover:border-blue-500/40 transition">
-              <div className="flex items-start justify-between">
-                <div className="flex gap-3 flex-1">
-                  <div className="p-3 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 shadow-lg">
-                    <div className="text-2xl font-bold">{entry.glucose}</div>
-                    <div className="text-xs opacity-80">g/L</div>
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-2xl">{moments.find(m => m.id === entry.moment)?.icon}</span>
-                      <div className="font-semibold text-lg">{entry.measureTime}</div>
                     </div>
-                    <div className="text-xs text-blue-300 mb-2">{moments.find(m => m.id === entry.moment)?.label}</div>
-                    
-                    {entry.medications && entry.medications.length > 0 && (
-                      <div className="space-y-1 mb-2">
-                        {entry.medications.map((med, i) => (
-                          <div key={i} className="text-sm text-blue-200 flex items-center gap-1 bg-blue-500/10 rounded px-2 py-1">
-                            <Pill size={14} />
-                            {med.name} • {med.dose} • {med.time}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    
-                    {entry.meal && (
-                      <div className="text-sm text-cyan-200 flex items-start gap-1 bg-cyan-500/10 rounded px-2 py-1 mb-1">
-                        <Utensils size={14} className="mt-0.5" />
-                        <div>
-                          <div className="font-semibold">{entry.meal} • {entry.mealTime}</div>
-                          {entry.mealContent && <div className="text-xs opacity-80">{entry.mealContent}</div>}
+                );
+            }
+
+            return (
+                <div className={`min-h-screen ${darkMode ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-900'} pb-24 transition-colors duration-300`}>
+                    {/* Header */}
+                    <header className="p-4 flex justify-between items-center sticky top-0 z-30 backdrop-blur-md border-b border-white/5">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-600 to-cyan-400 flex items-center justify-center font-bold text-white shadow-lg">
+                                {currentUser.name[0]}
+                            </div>
+                            <span className="font-bold text-lg">{currentUser.name}</span>
                         </div>
-                      </div>
-                    )}
-                    
-                    {entry.comment && (
-                      <div className="text-sm text-gray-300 mt-2 bg-white/5 rounded px-2 py-1">
-                        💬 {entry.comment}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <button 
-                  onClick={() => deleteEntry(entry.id)}
-                  className="p-2 hover:bg-red-500/20 rounded-lg transition"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    )}
+                        <div className="flex gap-2">
+                            <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-xl bg-white/5 active:bg-white/10">
+                                <Icon name={darkMode ? 'sun' : 'moon'} size={20} />
+                            </button>
+                            <button onClick={exportData} className="p-2 rounded-xl bg-white/5 text-blue-400">
+                                <Icon name="download" size={20} />
+                            </button>
+                            <button onClick={() => setShowUserSelect(true)} className="p-2 rounded-xl bg-white/5 text-red-400">
+                                <Icon name="log-out" size={20} />
+                            </button>
+                        </div>
+                    </header>
 
-    {activeTab === 'chart' && (
-      <div className="space-y-4">
-        <div className={`${darkMode ? 'bg-white/10' : 'bg-white'} backdrop-blur-xl rounded-2xl p-6 border ${darkMode ? 'border-white/20' : 'border-gray-200'}`}>
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-bold">Courbe glycémie</h3>
-            <select
-              value={chartPeriod}
-              onChange={(e) => setChartPeriod(e.target.value)}
-              className={`${darkMode ? 'bg-white/10 border-white/20 text-white' : 'bg-gray-50 border-gray-300 text-gray-900'} border rounded-lg px-3 py-2 text-sm`}
-            >
-              <option value="1j">24h</option>
-              <option value="3j">3 jours</option>
-              <option value="7j">7 jours</option>
-              <option value="15j">15 jours</option>
-              <option value="30j">30 jours</option>
-            </select>
-          </div>
+                    <main className="max-w-xl mx-auto p-4 space-y-6">
+                        {/* Tab Navigation */}
+                        <div className="flex p-1 bg-white/5 rounded-2xl gap-1">
+                            {['today', 'stats', 'badges'].map(tab => (
+                                <button key={tab} onClick={() => setActiveTab(tab)}
+                                        className={`flex-1 py-3 rounded-xl text-sm font-bold capitalize transition-all ${activeTab === tab ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40' : 'text-slate-500'}`}>
+                                    {tab === 'today' ? "Journal" : tab}
+                                </button>
+                            ))}
+                        </div>
 
-          {getChartData().length > 0 ? (
-            <>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={getChartData()} onClick={(e) => {
-                  if (e && e.activePayload && e.activePayload[0]) {
-                    const point = e.activePayload[0].payload;
-                    const fullEntry = Object.values(allEntries)
-                      .flat()
-                      .find(entry => entry.measureTime === point.time && entry.glucose === point.glucose);
-                    setSelectedPoint(fullEntry);
-                  }
-                }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={darkMode ? "#ffffff20" : "#00000020"} />
-                  <XAxis 
-                    dataKey="time" 
-                    stroke={darkMode ? "#ffffff60" : "#00000060"}
-                    style={{ fontSize: '12px' }}
-                  />
-                  <YAxis 
-                    stroke={darkMode ? "#ffffff60" : "#00000060"}
-                    style={{ fontSize: '12px' }}
-                    label={{ value: 'g/L', angle: -90, position: 'insideLeft', fill: darkMode ? '#ffffff60' : '#00000060' }}
-                  />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: darkMode ? '#1e1e2e' : '#ffffff', 
-                      border: `1px solid ${darkMode ? '#ffffff20' : '#00000020'}`, 
-                      borderRadius: '8px',
-                      color: darkMode ? '#fff' : '#000'
-                    }}
-                    labelStyle={{ color: darkMode ? '#fff' : '#000' }}
-                  />
-                  <ReferenceLine y={0.7} stroke="#ef4444" strokeDasharray="3 3" label={{ value: 'Hypo', fill: '#ef4444', fontSize: 10 }} />
-                  <ReferenceLine y={1.4} stroke="#22c55e" strokeDasharray="3 3" label={{ value: 'Normal', fill: '#22c55e', fontSize: 10 }} />
-                  <ReferenceLine y={1.8} stroke="#f59e0b" strokeDasharray="3 3" label={{ value: 'Hyper', fill: '#f59e0b', fontSize: 10 }} />
-                  <Line 
-                    type="monotone" 
-                    dataKey="glucose" 
-                    stroke="#3b82f6" 
-                    strokeWidth={3}
-                    dot={{ fill: '#3b82f6', r: 4, cursor: 'pointer' }}
-                    activeDot={{ r: 6, cursor: 'pointer' }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+                        {activeTab === 'today' && (
+                            <div className="space-y-4">
+                                {/* Dashboard Cards */}
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="bg-gradient-to-br from-blue-600/20 to-transparent p-5 rounded-3xl border border-blue-500/20">
+                                        <div className="text-slate-400 text-xs font-bold uppercase tracking-wider">Dernière</div>
+                                        <div className="text-3xl font-black mt-1">
+                                            {entries.length > 0 ? entries[entries.length-1].glucose : '--'}
+                                            <span className="text-xs font-normal ml-1 opacity-50 text-white">g/L</span>
+                                        </div>
+                                    </div>
+                                    <div className="bg-gradient-to-br from-purple-600/20 to-transparent p-5 rounded-3xl border border-purple-500/20">
+                                        <div className="text-slate-400 text-xs font-bold uppercase tracking-wider">Moyenne</div>
+                                        <div className="text-3xl font-black mt-1">
+                                            {entries.length > 0 ? (entries.reduce((a,b)=>a+b.glucose,0)/entries.length).toFixed(2) : '--'}
+                                            <span className="text-xs font-normal ml-1 opacity-50 text-white">g/L</span>
+                                        </div>
+                                    </div>
+                                </div>
 
-              {selectedPoint && (
-                <div className={`mt-4 ${darkMode ? 'bg-blue-500/20' : 'bg-blue-50'} border ${darkMode ? 'border-blue-500/30' : 'border-blue-200'} rounded-xl p-4`}>
-                  <div className="flex justify-between items-start mb-2">
-                    <h4 className="font-semibold text-blue-400">Détails du point</h4>
-                    <button onClick={() => setSelectedPoint(null)} className={`${darkMode ? 'hover:bg-white/10' : 'hover:bg-gray-200'} p-1 rounded`}>
-                      <X size={16} />
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div><span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Heure:</span> {selectedPoint.measureTime}</div>
-                    <div><span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Glycémie:</span> {selectedPoint.glucose} g/L</div>
-                    <div><span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Moment:</span> {moments.find(m => m.id === selectedPoint.moment)?.label}</div>
-                    {selectedPoint.meal && <div><span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Repas:</span> {selectedPoint.meal}</div>}
-                    {selectedPoint.medications && selectedPoint.medications.length > 0 && (
-                      <div className="col-span-2">
-                        <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Médicaments:</span>
-                        {selectedPoint.medications.map((m, i) => (
-                          <div key={i} className="ml-2">• {m.name} - {m.dose}</div>
-                        ))}
-                      </div>
-                    )}
-                    {selectedPoint.comment && (
-                      <div className="col-span-2"><span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Note:</span> {selectedPoint.comment}</div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className={`text-center py-12 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              <Activity size={48} className="mx-auto mb-4 opacity-50" />
-              <p>Aucune donnée pour cette période</p>
-              <p className="text-sm">Ajoutez des mesures pour voir la courbe</p>
-            </div>
-          )}
-        </div>
+                                {/* Form Button / Form */}
+                                {!showAddForm ? (
+                                    <button onClick={() => setShowAddForm(true)} 
+                                            className="w-full py-5 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-3xl font-black text-lg shadow-xl shadow-blue-900/20 flex items-center justify-center gap-3 active:scale-95 transition-transform">
+                                        <Icon name="plus" size={24} /> NOUVELLE MESURE
+                                    </button>
+                                ) : (
+                                    <div className="bg-slate-900 border border-blue-500/30 p-6 rounded-3xl space-y-5 animate-in slide-in-from-top duration-300">
+                                        <div className="flex justify-between items-center">
+                                            <h3 className="font-bold text-xl">Ajouter</h3>
+                                            <button onClick={() => setShowAddForm(false)} className="p-2"><Icon name="x" /></button>
+                                        </div>
+                                        <div className="space-y-4">
+                                            <div className="relative">
+                                                <input type="number" step="0.01" value={formData.glucose} 
+                                                       onChange={e => setFormData({...formData, glucose: e.target.value})}
+                                                       className="w-full bg-slate-950 p-6 rounded-2xl text-4xl font-black text-center text-blue-400 outline-none border-2 border-transparent focus:border-blue-500" 
+                                                       placeholder="0.00" autoFocus />
+                                                <div className="absolute right-4 bottom-4 text-slate-500 font-bold">g/L</div>
+                                            </div>
+                                            
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <select value={formData.moment} onChange={e => setFormData({...formData, moment: e.target.value})}
+                                                        className="bg-white/5 p-4 rounded-xl outline-none font-bold">
+                                                    <option value="matin_jeun">🌅 À jeun</option>
+                                                    <option value="midi">☀️ Midi</option>
+                                                    <option value="soir">🌙 Soir</option>
+                                                    <option value="nuit">🌌 Nuit</option>
+                                                </select>
+                                                <input type="time" value={formData.measureTime} 
+                                                       onChange={e => setFormData({...formData, measureTime: e.target.value})}
+                                                       className="bg-white/5 p-4 rounded-xl font-bold outline-none" />
+                                            </div>
 
-        <div className="grid grid-cols-3 gap-3">
-          <div className="bg-red-500/20 backdrop-blur rounded-xl p-4 border border-red-500/30">
-            <div className="text-xs text-gray-300 mb-1">Hypoglycémie</div>
-            <div className="text-2xl font-bold">
-              {getChartData().filter(d => d.glucose < 0.7).length}
-            </div>
-            <div className="text-xs text-gray-400">fois</div>
-          </div>
-          <div className="bg-green-500/20 backdrop-blur rounded-xl p-4 border border-green-500/30">
-            <div className="text-xs text-gray-300 mb-1">Normal</div>
-            <div className="text-2xl font-bold">
-              {getChartData().filter(d => d.glucose >= 0.7 && d.glucose <= 1.8).length}
-            </div>
-            <div className="text-xs text-gray-400">fois</div>
-          </div>
-          <div className="bg-orange-500/20 backdrop-blur rounded-xl p-4 border border-orange-500/30">
-            <div className="text-xs text-gray-300 mb-1">Hyperglycémie</div>
-            <div className="text-2xl font-bold">
-              {getChartData().filter(d => d.glucose > 1.8).length}
-            </div>
-            <div className="text-xs text-gray-400">fois</div>
-          </div>
-        </div>
-      </div>
-    )}
+                                            <input value={formData.mealContent} onChange={e => setFormData({...formData, mealContent: e.target.value})}
+                                                   className="w-full bg-white/5 p-4 rounded-xl outline-none" placeholder="💬 Repas ou note..." />
+                                            
+                                            <button onClick={saveEntry} className="w-full py-4 bg-blue-600 rounded-2xl font-black shadow-lg">VALIDER</button>
+                                        </div>
+                                    </div>
+                                )}
 
-    {activeTab === 'stats' && (
-      <div className="space-y-4">
-        <div className={`${darkMode ? 'bg-white/10' : 'bg-white'} backdrop-blur-xl rounded-2xl p-6 border ${darkMode ? 'border-white/20' : 'border-gray-200'}`}>
-          <h3 className="text-xl font-bold mb-4">Statistiques détaillées</h3>
-          <div className="space-y-4">
-            <div className={`bg-gradient-to-r ${darkMode ? 'from-blue-500/20 to-cyan-500/20' : 'from-blue-100 to-cyan-100'} rounded-lg p-4 border ${darkMode ? 'border-blue-500/30' : 'border-blue-200'}`}>
-              <div className={`${darkMode ? 'text-gray-300' : 'text-gray-700'} text-sm mb-2`}>Temps dans la cible</div>
-              <div className="flex items-end gap-2">
-                <div className="text-4xl font-bold text-blue-400">{getTimeInRange()}%</div>
-                <div className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-1`}>({goals.min}-{goals.max} g/L)</div>
-              </div>
-              <div className={`mt-2 ${darkMode ? 'bg-white/10' : 'bg-gray-200'} rounded-full h-2`}>
-                <div 
-                  className="bg-gradient-to-r from-blue-500 to-cyan-500 h-2 rounded-full transition-all"
-                  style={{ width: `${getTimeInRange()}%` }}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className={`${darkMode ? 'bg-white/5' : 'bg-gray-50'} rounded-lg p-4`}>
-                <div className={`${darkMode ? 'text-gray-400' : 'text-gray-600'} text-sm`}>Moyenne</div>
-                <div className="text-3xl font-bold text-blue-400">{getAverageGlucose()} g/L</div>
-              </div>
-              <div className={`${darkMode ? 'bg-white/5' : 'bg-gray-50'} rounded-lg p-4`}>
-                <div className={`${darkMode ? 'text-gray-400' : 'text-gray-600'} text-sm`}>Plage</div>
-                <div className="text-xl font-bold text-cyan-400">
-                  {getGlucoseRange().min} - {getGlucoseRange().max}
-                </div>
-              </div>
-            </div>
-
-            <div className={`${darkMode ? 'bg-white/5' : 'bg-gray-50'} rounded-lg p-4`}>
-              <div className={`${darkMode ? 'text-gray-400' : 'text-gray-600'} text-sm`}>Mesures aujourd'hui</div>
-              <div className="flex items-center gap-3">
-                <div className="text-3xl font-bold text-green-400">{entries.length}/{goals.dailyMeasures}</div>
-                <div className={`flex-1 ${darkMode ? 'bg-white/10' : 'bg-gray-200'} rounded-full h-3`}>
-                  <div 
-                    className="bg-gradient-to-r from-blue-500 to-cyan-500 h-3 rounded-full transition-all"
-                    style={{ width: `${getDailyProgress()}%` }}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* HeatMap */}
-        <div className={`${darkMode ? 'bg-white/10' : 'bg-white'} backdrop-blur-xl rounded-2xl p-6 border ${darkMode ? 'border-white/20' : 'border-gray-200'}`}>
-          <h3 className="text-xl font-bold mb-4">🗺️ HeatMap - Glycémie par jour et heure</h3>
-          <div className="overflow-x-auto">
-            <div className="inline-block min-w-full">
-              <div className="flex gap-1 mb-2">
-                <div className="w-12"></div>
-                {Array.from({ length: 24 }, (_, i) => (
-                  <div key={i} className={`w-6 text-xs text-center ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                    {i}h
-                  </div>
-                ))}
-              </div>
-              {Object.entries(getHeatMapData()).map(([day, hours]) => (
-                <div key={day} className="flex gap-1 mb-1">
-                  <div className={`w-12 text-xs flex items-center ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{day}</div>
-                  {Array.from({ length: 24 }, (_, hour) => {
-                    const data = hours[hour];
-                    const color = getHeatMapColor(data.avg);
-                    return (
-                      <div
-                        key={hour}
-                        className={`w-6 h-6 ${color} rounded transition-all hover:scale-125 cursor-pointer relative group`}
-                        title={data.count > 0 ? `${day} ${hour}h: ${data.avg.toFixed(1)} g/L (${data.count} mesures)` : 'Aucune mesure'}
-                      >
-                        {data.count > 0 && (
-                          <div className="absolute hidden group-hover:block bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded whitespace-nowrap z-10">
-                            {data.avg.toFixed(1)} g/L
-                          </div>
+                                {/* Timeline */}
+                                <div className="space-y-3 pt-4">
+                                    <h4 className="text-sm font-bold text-slate-500 uppercase tracking-widest px-2">Aujourd'hui</h4>
+                                    {entries.length === 0 ? (
+                                        <div className="text-center py-10 text-slate-600">Aucune donnée aujourd'hui</div>
+                                    ) : (
+                                        entries.slice().reverse().map(entry => (
+                                            <div key={entry.id} className="bg-white/5 p-5 rounded-3xl flex items-center justify-between border border-white/5">
+                                                <div className="flex items-center gap-4">
+                                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg ${entry.glucose > 1.4 ? 'bg-orange-500/20 text-orange-500' : entry.glucose < 0.7 ? 'bg-red-500/20 text-red-500' : 'bg-green-500/20 text-green-500'}`}>
+                                                        {entry.glucose}
+                                                    </div>
+                                                    <div>
+                                                        <div className="font-black text-lg">{entry.measureTime}</div>
+                                                        <div className="text-sm text-slate-500 flex items-center gap-1">
+                                                            <Icon name="utensils" size={12} /> {entry.mealContent || 'Pas de note'}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <button className="text-slate-700"><Icon name="chevron-right" /></button>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
                         )}
-                      </div>
-                    );
-                  })}
+
+                        {activeTab === 'stats' && (
+                            <div className="space-y-6">
+                                <div className="bg-slate-900/50 p-4 rounded-3xl h-72 border border-white/5">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <AreaChart data={entries}>
+                                            <defs>
+                                                <linearGradient id="colorGluc" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                                                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                                                </linearGradient>
+                                            </defs>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
+                                            <XAxis dataKey="measureTime" stroke="#475569" fontSize={10} axisLine={false} tickLine={false} />
+                                            <YAxis stroke="#475569" fontSize={10} axisLine={false} tickLine={false} domain={[0, 2]} />
+                                            <Tooltip contentStyle={{background: '#0f172a', border: 'none', borderRadius: '12px', fontSize: '12px'}} />
+                                            <Area type="monotone" dataKey="glucose" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorGluc)" />
+                                            <ReferenceLine y={1.4} stroke="#f97316" strokeDasharray="5 5" label={{position: 'right', value: 'High', fill: '#f97316', fontSize: 10}} />
+                                            <ReferenceLine y={0.7} stroke="#ef4444" strokeDasharray="5 5" label={{position: 'right', value: 'Low', fill: '#ef4444', fontSize: 10}} />
+                                        </AreaChart>
+                                    </ResponsiveContainer>
+                                </div>
+                                <div className="bg-blue-600/10 p-6 rounded-3xl border border-blue-500/20">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <Icon name="trending-up" className="text-blue-400" />
+                                        <h3 className="font-bold">Analyse Hebdo</h3>
+                                    </div>
+                                    <p className="text-sm text-slate-400 leading-relaxed">
+                                        Votre glycémie moyenne est stable. Maintenez vos efforts sur les mesures matinales.
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'badges' && (
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className={`p-6 rounded-3xl border flex flex-col items-center text-center gap-3 transition-all ${badges.includes('first') ? 'bg-yellow-500/10 border-yellow-500/40 text-yellow-500' : 'bg-white/5 border-white/5 opacity-30 grayscale'}`}>
+                                    <Icon name="award" size={40} />
+                                    <div>
+                                        <div className="font-black">Pionnier</div>
+                                        <div className="text-xs">Première mesure</div>
+                                    </div>
+                                </div>
+                                <div className={`p-6 rounded-3xl border flex flex-col items-center text-center gap-3 transition-all ${badges.includes('week') ? 'bg-blue-500/10 border-blue-500/40 text-blue-500' : 'bg-white/5 border-white/5 opacity-30 grayscale'}`}>
+                                    <Icon name="calendar" size={40} />
+                                    <div>
+                                        <div className="font-black">Régularité</div>
+                                        <div className="text-xs">7 jours de suivi</div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </main>
+
+                    {/* Bottom Nav */}
+                    <nav className="fixed bottom-0 left-0 right-0 bg-slate-950/80 backdrop-blur-xl border-t border-white/5 p-4 flex justify-around items-center z-50">
+                        <button onClick={() => setActiveTab('today')} className={`p-3 rounded-2xl transition-all ${activeTab === 'today' ? 'bg-blue-600/20 text-blue-400 scale-110' : 'text-slate-500'}`}>
+                            <Icon name="calendar" size={24} />
+                        </button>
+                        <button onClick={() => setActiveTab('stats')} className={`p-3 rounded-2xl transition-all ${activeTab === 'stats' ? 'bg-blue-600/20 text-blue-400 scale-110' : 'text-slate-500'}`}>
+                            <Icon name="trending-up" size={24} />
+                        </button>
+                        <button onClick={() => setActiveTab('badges')} className={`p-3 rounded-2xl transition-all ${activeTab === 'badges' ? 'bg-blue-600/20 text-blue-400 scale-110' : 'text-slate-500'}`}>
+                            <Icon name="award" size={24} />
+                        </button>
+                    </nav>
                 </div>
-              ))}
-            </div>
-          </div>
-          <div className="mt-4 flex items-center justify-center gap-4 text-xs">
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-red-500 rounded"></div>
-              <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Hypo</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-green-500 rounded"></div>
-              <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Normal</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-yellow-500 rounded"></div>
-              <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Élevé</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-orange-500 rounded"></div>
-              <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Hyper</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className={`w-4 h-4 ${darkMode ? 'bg-gray-800' : 'bg-gray-200'} rounded`}></div>
-              <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Aucune</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    )}
+            );
+        };
 
-    {activeTab === 'badges' && (
-      <div className="space-y-4">
-        <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20">
-          <h3 className="text-xl font-bold mb-4">Accomplissements</h3>
-          <div className="grid grid-cols-3 gap-4">
-            <BadgeCard type="first" unlocked={badges.includes('first')} />
-            <BadgeCard type="week" unlocked={badges.includes('week')} />
-            <BadgeCard type="fifty" unlocked={badges.includes('fifty')} />
-          </div>
-        </div>
-      </div>
-    )}
-  </div>
-
-  <div className="fixed bottom-6 right-6">
-    <button className="bg-red-500 hover:bg-red-600 p-4 rounded-full shadow-2xl hover:scale-110 transition-all">
-      <AlertCircle size={24} />
-    </button>
-  </div>
-</div>
-```
-
-);
-};
-
-export default GlucoTrack;
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<GlucoTrack />);
+    </script>
+</body>
+</html>
