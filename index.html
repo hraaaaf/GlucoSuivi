@@ -3,50 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>GlucoTrack Pro</title>
+    <title>GlucoTrack Pro - Intégral</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
         body { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; background-color: #020617; color: white; }
-        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+        .glass { background: rgba(30, 41, 59, 0.5); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.08); }
         .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom); }
-        .tab-active { color: #3b82f6; position: relative; }
-        .tab-active::after { content: ''; position: absolute; bottom: -4px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; background: #3b82f6; border-radius: 50%; }
-        .hidden { display: none; }
+        .tab-active { color: #3b82f6; }
+        .tab-active::after { content: ''; position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); width: 12px; height: 3px; background: #3b82f6; border-radius: 20px; box-shadow: 0 0 10px #3b82f6; }
+        input[type="number"]::-webkit-inner-spin-button { display: none; }
     </style>
 </head>
 <body>
 
-    <div id="login-screen" class="p-8 flex flex-col items-center justify-center min-h-screen">
-        <h1 class="text-5xl font-black text-blue-500 mb-2 italic tracking-tighter">GLUCO</h1>
-        <p class="text-slate-500 text-xs font-bold uppercase tracking-widest mb-12">Gestion Intégrale</p>
-        <div id="user-list" class="w-full max-w-sm space-y-4 mb-8"></div>
-        <div class="flex gap-2 w-full max-w-sm glass p-2 rounded-2xl">
-            <input id="user-input" type="text" placeholder="Nouveau profil..." class="flex-1 bg-transparent px-4 py-2 outline-none">
-            <button onclick="createUser()" class="bg-blue-600 w-10 h-10 rounded-xl font-bold">+</button>
+    <div id="login-screen" class="p-8 flex flex-col items-center justify-center min-h-screen animate-in fade-in duration-700">
+        <div class="mb-12 text-center">
+            <div class="inline-block p-4 bg-blue-600/20 rounded-[2rem] mb-4">
+                <i data-lucide="activity" class="text-blue-500 w-12 h-12"></i>
+            </div>
+            <h1 class="text-5xl font-extrabold tracking-tighter italic italic">GLUCOTRACK</h1>
+            <p class="text-slate-500 font-bold text-[10px] uppercase tracking-[0.3em] mt-2">Intelligence Diabétique</p>
+        </div>
+        <div id="user-list" class="w-full max-w-sm space-y-4 mb-10"></div>
+        <div class="w-full max-w-sm glass p-2 rounded-[2rem] flex items-center gap-2">
+            <input id="user-input" type="text" placeholder="Nom du profil..." class="flex-1 bg-transparent px-6 py-3 outline-none font-medium">
+            <button onclick="createUser()" class="bg-blue-600 w-12 h-12 rounded-[1.5rem] font-black shadow-lg shadow-blue-900/40 hover:scale-105 transition-all">+</button>
         </div>
     </div>
 
-    <div id="app-screen" class="hidden min-h-screen flex flex-col">
-        <header class="p-6 flex justify-between items-center sticky top-0 bg-slate-950/80 backdrop-blur-md z-50">
-            <div class="flex items-center gap-3">
-                <div id="user-avatar" class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center font-bold italic shadow-lg shadow-blue-900/40"></div>
-                <span id="user-name-display" class="font-bold text-lg"></span>
+    <div id="app-screen" class="hidden min-h-screen">
+        <header class="p-6 flex justify-between items-center sticky top-0 bg-slate-950/90 backdrop-blur-xl z-50 border-b border-white/5">
+            <div class="flex items-center gap-4">
+                <div id="user-avatar" class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-700 to-cyan-500 flex items-center justify-center font-black text-xl shadow-xl shadow-blue-900/20"></div>
+                <div>
+                    <span id="user-name-display" class="font-extrabold text-lg block leading-none"></span>
+                    <span class="text-[10px] text-slate-500 font-black uppercase tracking-widest">Niveau 12 • Pro</span>
+                </div>
             </div>
-            <div class="flex gap-4">
-                <button onclick="exportData()" class="text-slate-400"><i data-lucide="download"></i></button>
-                <button onclick="logout()" class="text-red-500"><i data-lucide="log-out"></i></button>
+            <div class="flex gap-2">
+                <button onclick="exportData()" class="w-10 h-10 glass rounded-xl flex items-center justify-center text-blue-400"><i data-lucide="download" size="18"></i></button>
+                <button onclick="logout()" class="w-10 h-10 glass rounded-xl flex items-center justify-center text-red-500"><i data-lucide="log-out" size="18"></i></button>
             </div>
         </header>
 
-        <main id="main-content" class="p-6 max-w-lg mx-auto w-full flex-1 pb-32">
+        <main id="main-content" class="p-6 max-w-lg mx-auto pb-36 space-y-8">
             </main>
 
-        <nav class="fixed bottom-0 left-0 right-0 bg-slate-900/90 backdrop-blur-xl border-t border-white/5 px-8 pt-4 pb-10 flex justify-around safe-area-bottom z-50">
-            <button onclick="switchTab('today')" id="nav-today" class="tab-active text-slate-500"><i data-lucide="calendar"></i></button>
-            <button onclick="switchTab('stats')" id="nav-stats" class="text-slate-500"><i data-lucide="trending-up"></i></button>
-            <button onclick="switchTab('badges')" id="nav-badges" class="text-slate-500"><i data-lucide="award"></i></button>
+        <nav class="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-2xl border-t border-white/10 px-10 pt-5 pb-10 flex justify-around safe-area-bottom z-50">
+            <button onclick="switchTab('today')" id="nav-today" class="tab-active relative"><i data-lucide="calendar"></i></button>
+            <button onclick="switchTab('pills')" id="nav-pills" class="relative text-slate-500"><i data-lucide="pill"></i></button>
+            <button onclick="switchTab('stats')" id="nav-stats" class="relative text-slate-500"><i data-lucide="trending-up"></i></button>
+            <button onclick="switchTab('badges')" id="nav-badges" class="relative text-slate-500"><i data-lucide="award"></i></button>
         </nav>
     </div>
 
@@ -54,36 +64,30 @@
         let currentUser = null;
         let entries = [];
         let activeTab = 'today';
+        const goals = { min: 0.7, max: 1.4 };
 
-        // --- MOTEUR DE NAVIGATION ---
-        function switchTab(tab) {
-            activeTab = tab;
-            document.querySelectorAll('nav button').forEach(b => b.classList.remove('tab-active'));
-            document.getElementById('nav-' + tab).classList.add('tab-active');
-            render();
-        }
-
-        // --- GESTION UTILISATEURS ---
         function renderUsers() {
-            const users = JSON.parse(localStorage.getItem('gt_users_v3') || '[]');
+            const users = JSON.parse(localStorage.getItem('gt_users_vfinal') || '[]');
             const list = document.getElementById('user-list');
             list.innerHTML = users.map(u => `
-                <button onclick="login('${u.name}')" class="w-full glass p-5 rounded-[2rem] flex items-center gap-4 active:scale-95 transition-all">
-                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-400 flex items-center justify-center font-bold text-xl shadow-lg">${u.name[0]}</div>
+                <button onclick="login('${u.name}')" class="w-full glass p-6 rounded-[2.5rem] flex items-center gap-5 hover:bg-white/10 active:scale-95 transition-all">
+                    <div class="w-14 h-14 rounded-[1.5rem] bg-gradient-to-br from-blue-600 to-indigo-500 flex items-center justify-center font-black text-2xl shadow-xl shadow-blue-900/30 text-white">${u.name[0]}</div>
                     <div class="text-left">
-                        <div class="font-bold text-lg">${u.name}</div>
-                        <div class="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Profil Actif</div>
+                        <div class="font-extrabold text-xl tracking-tight">${u.name}</div>
+                        <div class="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em]">Profil Patient</div>
                     </div>
+                    <i data-lucide="chevron-right" class="ml-auto text-slate-700"></i>
                 </button>
             `).join('');
+            lucide.createIcons();
         }
 
         function createUser() {
             const name = document.getElementById('user-input').value;
-            if(!name) return;
-            const users = JSON.parse(localStorage.getItem('gt_users_v3') || '[]');
-            users.push({name});
-            localStorage.setItem('gt_users_v3', JSON.stringify(users));
+            if(!name.trim()) return;
+            const users = JSON.parse(localStorage.getItem('gt_users_vfinal') || '[]');
+            users.push({name: name.trim()});
+            localStorage.setItem('gt_users_vfinal', JSON.stringify(users));
             login(name);
         }
 
@@ -97,78 +101,99 @@
             render();
         }
 
-        function logout() { location.reload(); }
+        function switchTab(tab) {
+            activeTab = tab;
+            document.querySelectorAll('nav button').forEach(b => b.classList.add('text-slate-500', 'tab-active')); // clean
+            document.querySelectorAll('nav button').forEach(b => b.classList.remove('tab-active', 'text-blue-500'));
+            document.getElementById('nav-' + tab).classList.add('tab-active');
+            document.getElementById('nav-' + tab).classList.remove('text-slate-500');
+            render();
+        }
 
-        // --- VUES ---
         function render() {
             const main = document.getElementById('main-content');
             
             if(activeTab === 'today') {
-                const lastVal = entries.length > 0 ? entries[0].val : '--';
+                const last = entries[0] || {val: 0};
                 const avg = entries.length > 0 ? (entries.reduce((a,b)=>a+b.val,0)/entries.length).toFixed(2) : '--';
                 
                 main.innerHTML = `
-                    <div class="space-y-6">
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="glass p-6 rounded-[2.5rem]">
-                                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Dernière</p>
-                                <p class="text-3xl font-black italic">${lastVal}<span class="text-xs font-normal ml-1 opacity-50">g/L</span></p>
+                    <div class="space-y-8 animate-in slide-in-from-bottom-5 duration-500">
+                        <div class="grid grid-cols-2 gap-5">
+                            <div class="glass p-7 rounded-[2.5rem] border-l-4 border-l-blue-500">
+                                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Dernière</p>
+                                <p class="text-4xl font-black italic">${last.val || '--'}<span class="text-xs font-normal opacity-40 ml-1">g/L</span></p>
                             </div>
-                            <div class="glass p-6 rounded-[2.5rem]">
-                                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Moyenne</p>
-                                <p class="text-3xl font-black italic">${avg}<span class="text-xs font-normal ml-1 opacity-50">g/L</span></p>
+                            <div class="glass p-7 rounded-[2.5rem] border-l-4 border-l-emerald-500">
+                                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Moyenne</p>
+                                <p class="text-4xl font-black italic">${avg}<span class="text-xs font-normal opacity-40 ml-1">g/L</span></p>
                             </div>
                         </div>
 
-                        <button onclick="showAddForm()" class="w-full py-6 bg-blue-600 rounded-[2rem] font-black text-sm uppercase tracking-[0.2em] shadow-2xl shadow-blue-900/40">+ Ajouter Mesure</button>
-                        
-                        <div id="add-form" class="hidden glass p-6 rounded-[2.5rem] space-y-6 animate-in slide-in-from-top duration-300">
-                            <input id="val-input" type="number" step="0.01" placeholder="0.00" class="w-full bg-transparent p-4 text-6xl font-black text-center text-blue-400 outline-none">
-                            <div class="grid grid-cols-2 gap-3">
-                                <select id="moment-input" class="bg-white/5 p-4 rounded-2xl font-bold text-sm outline-none">
-                                    <option value="🌅 À jeun">🌅 À jeun</option>
-                                    <option value="🍱 Midi">🍱 Midi</option>
-                                    <option value="🌙 Soir">🌙 Soir</option>
-                                </select>
-                                <select id="meal-input" class="bg-white/5 p-4 rounded-2xl font-bold text-sm outline-none">
-                                    <option value="🥗 Léger">🥗 Léger</option>
-                                    <option value="🍱 Normal">🍱 Normal</option>
-                                    <option value="🍕 Riche">🍕 Riche</option>
-                                </select>
-                            </div>
-                            <input id="note-input" type="text" placeholder="Médicament ou note..." class="w-full bg-white/5 p-4 rounded-2xl text-sm outline-none">
-                            <button onclick="saveMeasure()" class="w-full py-4 bg-white text-slate-950 rounded-2xl font-black uppercase">Enregistrer</button>
+                        <div id="form-container">
+                            <button onclick="toggleForm()" class="w-full py-7 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-[2rem] font-black text-xs uppercase tracking-[0.3em] shadow-2xl shadow-blue-900/40 active:scale-[0.98] transition-all flex items-center justify-center gap-3">
+                                <i data-lucide="plus" size="18"></i> Nouvelle Mesure
+                            </button>
                         </div>
 
-                        <div class="space-y-3 pt-4">
-                            <h4 class="text-[10px] font-black text-slate-500 uppercase tracking-widest px-2">Aujourd'hui</h4>
+                        <div id="history-list" class="space-y-4">
+                            <div class="flex justify-between items-center px-2">
+                                <h3 class="text-xs font-black text-slate-600 uppercase tracking-[0.2em]">Journal du jour</h3>
+                                <span class="text-[10px] font-bold text-blue-500 bg-blue-500/10 px-3 py-1 rounded-full">${entries.length} Saisies</span>
+                            </div>
                             ${entries.map(e => `
-                                <div class="glass p-5 rounded-3xl flex items-center justify-between">
-                                    <div class="flex items-center gap-4">
-                                        <div class="w-14 h-14 rounded-2xl flex items-center justify-center font-black text-lg ${e.val > 1.4 ? 'bg-orange-500/20 text-orange-500' : e.val < 0.7 ? 'bg-red-500/20 text-red-500' : 'bg-emerald-500/20 text-emerald-500'}">${e.val}</div>
+                                <div class="glass p-6 rounded-[2rem] flex items-center justify-between border border-white/5">
+                                    <div class="flex items-center gap-5">
+                                        <div class="w-16 h-16 rounded-[1.5rem] flex flex-col items-center justify-center font-black ${e.val > goals.max ? 'bg-orange-500/10 text-orange-500' : e.val < goals.min ? 'bg-red-500/10 text-red-500' : 'bg-emerald-500/10 text-emerald-500'}">
+                                            <span class="text-2xl italic leading-none">${e.val}</span>
+                                            <span class="text-[8px] uppercase tracking-tighter opacity-70">g/L</span>
+                                        </div>
                                         <div>
-                                            <div class="font-black text-lg">${e.time}</div>
-                                            <div class="text-[10px] font-bold text-slate-500 uppercase">${e.moment} • ${e.note || 'Pas de note'}</div>
+                                            <div class="font-black text-xl italic">${e.time}</div>
+                                            <div class="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase">
+                                                <i data-lucide="clock" size="10"></i> ${e.moment}
+                                            </div>
                                         </div>
                                     </div>
-                                    <button onclick="deleteEntry(${e.id})" class="text-slate-800"><i data-lucide="trash-2"></i></button>
+                                    <button onclick="deleteEntry(${e.id})" class="p-3 text-slate-800 hover:text-red-500 transition-colors"><i data-lucide="trash-2" size="20"></i></button>
                                 </div>
                             `).join('')}
                         </div>
                     </div>
                 `;
+            } else if(activeTab === 'pills') {
+                main.innerHTML = `
+                    <div class="space-y-6">
+                        <div class="glass p-8 rounded-[2.5rem]">
+                            <h3 class="font-black text-xl mb-6 flex items-center gap-3"><i data-lucide="pill" class="text-blue-500"></i> Traitements</h3>
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between p-4 bg-white/5 rounded-2xl">
+                                    <span class="font-bold">Insuline Rapide</span>
+                                    <span class="text-blue-400 font-black">-- U</span>
+                                </div>
+                                <div class="flex items-center justify-between p-4 bg-white/5 rounded-2xl">
+                                    <span class="font-bold">Basale</span>
+                                    <span class="text-indigo-400 font-black">-- U</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
             } else if(activeTab === 'stats') {
-                main.innerHTML = `<div class="glass p-10 rounded-[2.5rem] text-center text-slate-500 italic">Graphiques en cours de synchronisation...</div>`;
+                main.innerHTML = `
+                    <div class="space-y-6">
+                        <div class="glass p-8 rounded-[2.5rem] h-64 flex items-center justify-center flex-col text-slate-600">
+                             <i data-lucide="trending-up" size="48" class="mb-4 opacity-20"></i>
+                             <p class="font-black uppercase text-[10px] tracking-widest">Graphique de tendance</p>
+                        </div>
+                    </div>
+                `;
             } else {
                 main.innerHTML = `
                     <div class="grid grid-cols-2 gap-4">
-                        <div class="glass p-8 rounded-[2rem] flex flex-col items-center gap-4 ${entries.length > 0 ? 'opacity-100' : 'opacity-20 grayscale'}">
-                            <div class="w-16 h-16 rounded-2xl bg-yellow-500 flex items-center justify-center shadow-lg"><i data-lucide="award"></i></div>
-                            <p class="font-black text-xs uppercase tracking-tighter">Pionnier</p>
-                        </div>
-                        <div class="glass p-8 rounded-[2rem] flex flex-col items-center gap-4 opacity-20 grayscale">
-                            <div class="w-16 h-16 rounded-2xl bg-blue-500 flex items-center justify-center shadow-lg"><i data-lucide="zap"></i></div>
-                            <p class="font-black text-xs uppercase tracking-tighter">7 Jours</p>
+                        <div class="glass p-8 rounded-[2.5rem] flex flex-col items-center gap-4 ${entries.length > 0 ? 'border-blue-500/50' : 'opacity-20'}">
+                            <div class="w-16 h-16 rounded-2xl bg-yellow-500 flex items-center justify-center shadow-xl"><i data-lucide="award"></i></div>
+                            <p class="font-black text-xs uppercase">Pionnier</p>
                         </div>
                     </div>
                 `;
@@ -176,21 +201,42 @@
             lucide.createIcons();
         }
 
-        // --- ACTIONS ---
-        function showAddForm() { document.getElementById('add-form').classList.toggle('hidden'); }
-        
+        function toggleForm() {
+            const container = document.getElementById('form-container');
+            container.innerHTML = `
+                <div class="glass p-8 rounded-[2.5rem] space-y-6 animate-in zoom-in-95 duration-300 border-2 border-blue-500/20">
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-black text-xl italic italic">NOUVELLE ENTRÉE</h3>
+                        <button onclick="render()" class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center"><i data-lucide="x" size="18"></i></button>
+                    </div>
+                    <div class="relative">
+                        <input id="val-input" type="number" step="0.01" class="w-full bg-transparent text-7xl font-black text-center text-blue-400 outline-none" placeholder="0.00" autoFocus>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <select id="moment-input" class="bg-white/5 p-4 rounded-2xl font-black text-xs outline-none uppercase">
+                            <option value="À jeun">🌅 À jeun</option>
+                            <option value="Post-Prandial">🍱 Après repas</option>
+                            <option value="Coucher">🌙 Coucher</option>
+                        </select>
+                        <input id="med-input" type="text" placeholder="Dose..." class="bg-white/5 p-4 rounded-2xl font-bold text-xs outline-none">
+                    </div>
+                    <button onclick="saveMeasure()" class="w-full py-5 bg-blue-600 rounded-[1.5rem] font-black text-sm uppercase tracking-widest shadow-xl shadow-blue-900/40">VALIDER</button>
+                </div>
+            `;
+            lucide.createIcons();
+            document.getElementById('val-input').focus();
+        }
+
         function saveMeasure() {
-            const val = document.getElementById('val-input').value;
-            if(!val) return;
-            const entry = {
+            const v = document.getElementById('val-input').value;
+            if(!v) return;
+            const e = {
                 id: Date.now(),
-                val: parseFloat(val),
+                val: parseFloat(v),
                 moment: document.getElementById('moment-input').value,
-                meal: document.getElementById('meal-input').value,
-                note: document.getElementById('note-input').value,
                 time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
             };
-            entries.unshift(entry);
+            entries.unshift(e);
             localStorage.setItem('gt_data_' + currentUser, JSON.stringify(entries));
             render();
         }
@@ -202,12 +248,15 @@
         }
 
         function exportData() {
-            alert("Exportation CSV prête : " + entries.length + " entrées.");
+            const ws = XLSX.utils.json_to_sheet(entries);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Glycémie");
+            XLSX.writeFile(wb, `GlucoTrack_${currentUser}.xlsx`);
         }
 
-        // Init
+        function logout() { location.reload(); }
+
         renderUsers();
-        lucide.createIcons();
     </script>
 </body>
 </html>
